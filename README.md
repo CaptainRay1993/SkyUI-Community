@@ -1,4 +1,4 @@
-# SkyUI Community Edition
+# SkyUI SE Community Update (6.0+)
 
 ## Building
 
