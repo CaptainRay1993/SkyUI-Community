@@ -87,7 +87,7 @@ if(FFDEC_CLI)
 					"-DAS_SOURCE_DIR=${AS_SOURCE_DIR}"
 					-P "${ASSEMBLE_SCRIPT}"
 				COMMAND "${FFDEC_CLI}" -importScript "${SWF_INPUT}" "${SWF_OUT}" "${AS_STAGING}"
-				COMMENT "Compiling ActionScript into ${SWF_REL}"
+				COMMENT "Importing ActionScript files into ${SWF_REL}"
 			)
 			list(APPEND AS_TARGETS "AS_${VAR_PREFIX}")
 		else()
