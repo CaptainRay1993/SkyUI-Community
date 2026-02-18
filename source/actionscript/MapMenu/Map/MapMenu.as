@@ -263,9 +263,9 @@ class Map.MapMenu
       {
          return true;
       }
-      if(this._platform == Shared.ButtonChange.PLATFORM_PC)
+      if(this._platform == Shared.ButtonChange.PLATFORM_PC || skse.version != undefined)
       {
-         if(Shared.GlobalFunc.IsKeyPressed(details) && details.skseKeycode == 33)
+         if(Shared.GlobalFunc.IsKeyPressed(details) && (details.skseKeycode == this._findLocControls.keyCode))
          {
             this.LocalMapMenu.showLocationFinder();
          }
@@ -337,7 +337,7 @@ class Map.MapMenu
       this._journalButton.disabled = a_bGamepad;
       this._playerLocButton.disabled = a_bGamepad;
       this._findLocButton.disabled = a_bGamepad;
-      this._findLocButton.visible = !a_bGamepad;
+      this._findLocButton.visible = (skse.version == undefined) ? !a_bGamepad : a_bGamepad;
       this._searchButton.visible = false;
       _loc2_.updateButtons(true);
    }
