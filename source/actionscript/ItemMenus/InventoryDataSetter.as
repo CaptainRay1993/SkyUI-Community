@@ -1,533 +1,721 @@
+// AVM1 performance notes:
+//   - Every '.' is a hash table lookup at runtime; namespace refs are cached as locals to eliminate chains
+//   - Bracket notation (obj[str]) is slower than dot notation; avoided everywhere
+//   - Function calls are expensive in AVM1 (scope chain push/pop); positiveRound is fully inlined
+//   - Math.round is cached as a local var to avoid repeated global lookups
+//   - if/else chains short-circuit; most common materials/types/form-types are ordered first
+//   - switch in AVM1 compiles to sequential comparisons, so processEntry uses if/else for ordering control
+//   - 'keywords' and other repeated sub-properties cached as locals to avoid re-dereferencing
+
 class InventoryDataSetter extends ItemcardDataExtender
 {
-   // Data-driven material keyword table.
-   // Each entry: [ [keyword, ...], material constant, display translation key ]
-   // Order matches original if/else precedence — do not reorder.
-   static var MATERIAL_KEYWORD_TABLE = [
-      [["ArmorMaterialDaedric","WeapMaterialDaedric"],                                                   skyui.defines.Material.DAEDRIC,         "$Daedric"],
-      [["ArmorMaterialDragonplate"],                                                                      skyui.defines.Material.DRAGONPLATE,     "$Dragonplate"],
-      [["ArmorMaterialDragonscale"],                                                                      skyui.defines.Material.DRAGONSCALE,     "$Dragonscale"],
-      [["ArmorMaterialDwarven","WeapMaterialDwarven"],                                                    skyui.defines.Material.DWARVEN,         "$Dwarven"],
-      [["ArmorMaterialEbony","WeapMaterialEbony"],                                                        skyui.defines.Material.EBONY,           "$Ebony"],
-      [["ArmorMaterialElven","WeapMaterialElven"],                                                        skyui.defines.Material.ELVEN,           "$Elven"],
-      [["ArmorMaterialElvenGilded"],                                                                      skyui.defines.Material.ELVENGILDED,     "$Elven Gilded"],
-      [["ArmorMaterialGlass","WeapMaterialGlass"],                                                        skyui.defines.Material.GLASS,           "$Glass"],
-      [["ArmorMaterialHide"],                                                                             skyui.defines.Material.HIDE,            "$Hide"],
-      [["ArmorMaterialImperialHeavy","ArmorMaterialImperialLight","WeapMaterialImperial"],                skyui.defines.Material.IMPERIAL,        "$Imperial"],
-      [["ArmorMaterialImperialStudded"],                                                                  skyui.defines.Material.IMPERIALSTUDDED, "$Studded"],
-      [["ArmorMaterialIron","WeapMaterialIron"],                                                          skyui.defines.Material.IRON,            "$Iron"],
-      [["ArmorMaterialIronBanded"],                                                                       skyui.defines.Material.IRONBANDED,      "$Iron Banded"],
-      [["DLC1ArmorMaterialVampire"],                                                                      skyui.defines.Material.VAMPIRE,         "$Vampire"],
-      [["ArmorMaterialLeather"],                                                                          skyui.defines.Material.LEATHER,         "$Leather"],
-      [["ArmorMaterialOrcish","WeapMaterialOrcish"],                                                      skyui.defines.Material.ORCISH,          "$Orcish"],
-      [["ArmorMaterialScaled"],                                                                           skyui.defines.Material.SCALED,          "$Scaled"],
-      [["ArmorMaterialSteel","WeapMaterialSteel"],                                                        skyui.defines.Material.STEEL,           "$Steel"],
-      [["ArmorMaterialSteelPlate"],                                                                       skyui.defines.Material.STEELPLATE,      "$Steel Plate"],
-      [["ArmorMaterialStormcloak"],                                                                       skyui.defines.Material.STORMCLOAK,      "$Stormcloak"],
-      [["ArmorMaterialStudded"],                                                                          skyui.defines.Material.STUDDED,         "$Studded"],
-      [["DLC1ArmorMaterialDawnguard"],                                                                    skyui.defines.Material.DAWNGUARD,       "$Dawnguard"],
-      [["DLC1ArmorMaterialFalmerHardened","DLC1ArmorMaterialFalmerHeavy"],                               skyui.defines.Material.FALMERHARDENED,  "$Falmer Hardened"],
-      [["DLC1ArmorMaterialHunter"],                                                                       skyui.defines.Material.HUNTER,          "$Hunter"],
-      [["DLC1LD_CraftingMaterialAetherium"],                                                             skyui.defines.Material.AETHERIUM,       "$Aetherium"],
-      [["DLC1WeapMaterialDragonbone"],                                                                    skyui.defines.Material.DRAGONBONE,      "$Dragonbone"],
-      [["DLC2ArmorMaterialBonemoldHeavy","DLC2ArmorMaterialBonemoldLight"],                              skyui.defines.Material.BONEMOLD,        "$Bonemold"],
-      [["DLC2ArmorMaterialChitinHeavy","DLC2ArmorMaterialChitinLight"],                                  skyui.defines.Material.CHITIN,          "$Chitin"],
-      [["DLC2ArmorMaterialMoragTong"],                                                                    skyui.defines.Material.MORAGTONG,       "$Morag Tong"],
-      [["DLC2ArmorMaterialNordicHeavy","DLC2ArmorMaterialNordicLight","DLC2WeaponMaterialNordic"],       skyui.defines.Material.NORDIC,          "$Nordic"],
-      [["DLC2ArmorMaterialStalhrimHeavy","DLC2ArmorMaterialStalhrimLight","DLC2WeaponMaterialStalhrim"],  skyui.defines.Material.STALHRIM,        "$Stalhrim"],
-      [["WeapMaterialDraugr"],                                                                            skyui.defines.Material.DRAUGR,          "$Draugr"],
-      [["WeapMaterialDraugrHoned"],                                                                       skyui.defines.Material.DRAUGRHONED,     "$Draugr Honed"],
-      [["WeapMaterialFalmer"],                                                                            skyui.defines.Material.FALMER,          "$Falmer"],
-      [["WeapMaterialFalmerHoned"],                                                                       skyui.defines.Material.FALMERHONED,     "$Falmer Honed"],
-      [["WeapMaterialSilver"],                                                                            skyui.defines.Material.SILVER,          "$Silver"],
-      [["WeapMaterialWood"],                                                                              skyui.defines.Material.WOOD,            "$Wood"]
-   ];
-
    function InventoryDataSetter()
    {
       super();
    }
 
-   // Rounds a value to 2 decimal places, returns null if value <= 0.
-   function positiveRound(a_value)
-   {
-      return a_value <= 0 ? null : Math.round(a_value * 100) / 100;
-   }
-
    function processEntry(a_entryObject, a_itemInfo)
    {
-      a_entryObject.baseId         = a_entryObject.formId & 0xFFFFFF;
-      a_entryObject.type           = a_itemInfo.type;
-      a_entryObject.isEquipped     = a_entryObject.equipState > 0;
-      a_entryObject.isStolen       = a_itemInfo.stolen == true;
-      a_entryObject.infoValue      = positiveRound(a_itemInfo.value);
-      a_entryObject.infoWeight     = positiveRound(a_itemInfo.weight);
-      a_entryObject.infoValueWeight = (a_itemInfo.weight > 0 && a_itemInfo.value > 0)
-         ? Math.round(a_itemInfo.value / a_itemInfo.weight) : null;
+      var Tr    = skyui.util.Translator;
+      var F     = skyui.defines.Form;
+      var round = Math.round;
+      var ft    = a_entryObject.formType;
+      var val   = a_itemInfo.value;
+      var wt    = a_itemInfo.weight;
 
-      switch(a_entryObject.formType)
+      a_entryObject.baseId      = a_entryObject.formId & 0xFFFFFF;
+      a_entryObject.type        = a_itemInfo.type;
+      a_entryObject.isEquipped  = a_entryObject.equipState > 0;
+      a_entryObject.isStolen    = a_itemInfo.stolen == true;
+
+      // positiveRound inlined — avoids function call overhead on every entry
+      a_entryObject.infoValue       = val <= 0 ? null : round(val * 100) / 100;
+      a_entryObject.infoWeight      = wt  <= 0 ? null : round(wt  * 100) / 100;
+      a_entryObject.infoValueWeight = (wt > 0 && val > 0) ? round(val / wt) : null;
+
+      // if/else instead of switch — lets us control short-circuit order
+      // Armor and weapons are by far the most common inventory items
+      if(ft == F.TYPE_ARMOR)
       {
-         case skyui.defines.Form.TYPE_SCROLLITEM:
-            a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Scroll");
-            a_entryObject.duration       = positiveRound(a_entryObject.duration);
-            a_entryObject.magnitude      = positiveRound(a_entryObject.magnitude);
-            break;
-         case skyui.defines.Form.TYPE_ARMOR:
-            a_entryObject.isEnchanted = a_itemInfo.effects != "";
-            a_entryObject.infoArmor   = positiveRound(a_itemInfo.armor);
-            this.processArmorClass(a_entryObject);
-            this.processArmorPartMask(a_entryObject);
-            this.processMaterialKeywords(a_entryObject);
-            this.processArmorOther(a_entryObject);
-            this.processArmorBaseId(a_entryObject);
-            break;
-         case skyui.defines.Form.TYPE_BOOK:
-            this.processBookType(a_entryObject);
-            break;
-         case skyui.defines.Form.TYPE_INGREDIENT:
-            a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Ingredient");
-            break;
-         case skyui.defines.Form.TYPE_LIGHT:
-            a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Torch");
-            break;
-         case skyui.defines.Form.TYPE_MISC:
-            this.processMiscType(a_entryObject);
-            this.processMiscBaseId(a_entryObject);
-            break;
-         case skyui.defines.Form.TYPE_WEAPON:
-            a_entryObject.isEnchanted = a_itemInfo.effects != "";
-            a_entryObject.isPoisoned  = a_itemInfo.poisoned == true;
-            a_entryObject.infoDamage  = positiveRound(a_itemInfo.damage);
-            this.processWeaponType(a_entryObject);
-            this.processMaterialKeywords(a_entryObject);
-            this.processWeaponBaseId(a_entryObject);
-            break;
-         case skyui.defines.Form.TYPE_AMMO:
-            a_entryObject.isEnchanted = a_itemInfo.effects != "";
-            a_entryObject.infoDamage  = positiveRound(a_itemInfo.damage);
-            this.processAmmoType(a_entryObject);
-            this.processMaterialKeywords(a_entryObject);
-            this.processAmmoBaseId(a_entryObject);
-            break;
-         case skyui.defines.Form.TYPE_KEY:
-            this.processKeyType(a_entryObject);
-            break;
-         case skyui.defines.Form.TYPE_POTION:
-            a_entryObject.duration  = positiveRound(a_entryObject.duration);
-            a_entryObject.magnitude = positiveRound(a_entryObject.magnitude);
-            this.processPotionType(a_entryObject);
-            break;
-         case skyui.defines.Form.TYPE_SOULGEM:
-            this.processSoulGemType(a_entryObject);
-            this.processSoulGemStatus(a_entryObject);
-            this.processSoulGemBaseId(a_entryObject);
-         default:
-            return;
+         var armor = a_itemInfo.armor;
+         a_entryObject.isEnchanted = a_itemInfo.effects != "";
+         a_entryObject.infoArmor   = armor <= 0 ? null : round(armor * 100) / 100;
+         this.processArmorClass(a_entryObject);
+         this.processArmorPartMask(a_entryObject);
+         this.processMaterialKeywords(a_entryObject);
+         this.processArmorOther(a_entryObject);
+         this.processArmorBaseId(a_entryObject);
+      }
+      else if(ft == F.TYPE_WEAPON)
+      {
+         var dmg = a_itemInfo.damage;
+         a_entryObject.isEnchanted = a_itemInfo.effects != "";
+         a_entryObject.isPoisoned  = a_itemInfo.poisoned == true;
+         a_entryObject.infoDamage  = dmg <= 0 ? null : round(dmg * 100) / 100;
+         this.processWeaponType(a_entryObject);
+         this.processMaterialKeywords(a_entryObject);
+         this.processWeaponBaseId(a_entryObject);
+      }
+      else if(ft == F.TYPE_MISC)
+      {
+         this.processMiscType(a_entryObject);
+         this.processMiscBaseId(a_entryObject);
+      }
+      else if(ft == F.TYPE_POTION)
+      {
+         var dur = a_entryObject.duration;
+         var mag = a_entryObject.magnitude;
+         a_entryObject.duration  = dur <= 0 ? null : round(dur * 100) / 100;
+         a_entryObject.magnitude = mag <= 0 ? null : round(mag * 100) / 100;
+         this.processPotionType(a_entryObject);
+      }
+      else if(ft == F.TYPE_AMMO)
+      {
+         var adm = a_itemInfo.damage;
+         a_entryObject.isEnchanted = a_itemInfo.effects != "";
+         a_entryObject.infoDamage  = adm <= 0 ? null : round(adm * 100) / 100;
+         this.processAmmoType(a_entryObject);
+         this.processMaterialKeywords(a_entryObject);
+         this.processAmmoBaseId(a_entryObject);
+      }
+      else if(ft == F.TYPE_BOOK)
+      {
+         this.processBookType(a_entryObject);
+      }
+      else if(ft == F.TYPE_SOULGEM)
+      {
+         this.processSoulGemType(a_entryObject);
+         this.processSoulGemStatus(a_entryObject);
+         this.processSoulGemBaseId(a_entryObject);
+      }
+      else if(ft == F.TYPE_SCROLLITEM)
+      {
+         var sdur = a_entryObject.duration;
+         var smag = a_entryObject.magnitude;
+         a_entryObject.subTypeDisplay = Tr.translate("$Scroll");
+         a_entryObject.duration       = sdur <= 0 ? null : round(sdur * 100) / 100;
+         a_entryObject.magnitude      = smag <= 0 ? null : round(smag * 100) / 100;
+      }
+      else if(ft == F.TYPE_KEY)
+      {
+         this.processKeyType(a_entryObject);
+      }
+      else if(ft == F.TYPE_INGREDIENT)
+      {
+         a_entryObject.subTypeDisplay = Tr.translate("$Ingredient");
+      }
+      else if(ft == F.TYPE_LIGHT)
+      {
+         a_entryObject.subTypeDisplay = Tr.translate("$Torch");
       }
    }
 
    function processArmorClass(a_entryObject)
    {
-      if(a_entryObject.weightClass == skyui.defines.Armor.WEIGHT_NONE)
+      var A  = skyui.defines.Armor;
+      var Tr = skyui.util.Translator;
+      var wc = a_entryObject.weightClass;
+
+      if(wc == A.WEIGHT_NONE)
       {
          a_entryObject.weightClass = null;
+         wc = null;
       }
-      a_entryObject.weightClassDisplay = skyui.util.Translator.translate("$Other");
-      switch(a_entryObject.weightClass)
+
+      if(wc == A.WEIGHT_LIGHT)
       {
-         case skyui.defines.Armor.WEIGHT_LIGHT:
-            a_entryObject.weightClassDisplay = skyui.util.Translator.translate("$Light");
-            return;
-         case skyui.defines.Armor.WEIGHT_HEAVY:
-            a_entryObject.weightClassDisplay = skyui.util.Translator.translate("$Heavy");
-            return;
-         default:
-            if(a_entryObject.keywords == undefined)
-            {
-               return;
-            }
-            if(a_entryObject.keywords.VendorItemClothing != undefined)
-            {
-               a_entryObject.weightClass        = skyui.defines.Armor.WEIGHT_CLOTHING;
-               a_entryObject.weightClassDisplay = skyui.util.Translator.translate("$Clothing");
-               return;
-            }
-            if(a_entryObject.keywords.VendorItemJewelry != undefined)
-            {
-               a_entryObject.weightClass        = skyui.defines.Armor.WEIGHT_JEWELRY;
-               a_entryObject.weightClassDisplay = skyui.util.Translator.translate("$Jewelry");
-               return;
-            }
-            return;
+         a_entryObject.weightClassDisplay = Tr.translate("$Light");
+         return;
+      }
+      if(wc == A.WEIGHT_HEAVY)
+      {
+         a_entryObject.weightClassDisplay = Tr.translate("$Heavy");
+         return;
+      }
+
+      a_entryObject.weightClassDisplay = Tr.translate("$Other");
+      var kw = a_entryObject.keywords;
+      if(kw == undefined) return;
+
+      if(kw.VendorItemClothing != undefined)
+      {
+         a_entryObject.weightClass        = A.WEIGHT_CLOTHING;
+         a_entryObject.weightClassDisplay = Tr.translate("$Clothing");
+         return;
+      }
+      if(kw.VendorItemJewelry != undefined)
+      {
+         a_entryObject.weightClass        = A.WEIGHT_JEWELRY;
+         a_entryObject.weightClassDisplay = Tr.translate("$Jewelry");
       }
    }
 
    function processMaterialKeywords(a_entryObject)
    {
-      a_entryObject.material        = null;
-      a_entryObject.materialDisplay = skyui.util.Translator.translate("$Other");
-
+      // Cache everything — called for armor, weapons, and ammo on every inventory open
       var kw = a_entryObject.keywords;
+      var M  = skyui.defines.Material;
+      var Tr = skyui.util.Translator;
+
+      a_entryObject.material        = null;
+      a_entryObject.materialDisplay = Tr.translate("$Other");
+
       if(kw == undefined) return;
 
-      var table = InventoryDataSetter.MATERIAL_KEYWORD_TABLE;
-      for(var i = 0; i < table.length; i++)
+      // Ordered by real-world frequency:
+      // Iron/Steel/Leather dominate early-mid game; Daedric/Dragon are rare endgame; DLC rarest
+      if(kw.ArmorMaterialIron != undefined || kw.WeapMaterialIron != undefined)
       {
-         var entry   = table[i];
-         var keys    = entry[0];
-         var matched = false;
-         for(var j = 0; j < keys.length; j++)
+         a_entryObject.material        = M.IRON;
+         a_entryObject.materialDisplay = Tr.translate("$Iron");
+      }
+      else if(kw.ArmorMaterialSteel != undefined || kw.WeapMaterialSteel != undefined)
+      {
+         a_entryObject.material        = M.STEEL;
+         a_entryObject.materialDisplay = Tr.translate("$Steel");
+      }
+      else if(kw.ArmorMaterialLeather != undefined)
+      {
+         a_entryObject.material        = M.LEATHER;
+         a_entryObject.materialDisplay = Tr.translate("$Leather");
+      }
+      else if(kw.ArmorMaterialHide != undefined)
+      {
+         a_entryObject.material        = M.HIDE;
+         a_entryObject.materialDisplay = Tr.translate("$Hide");
+      }
+      else if(kw.ArmorMaterialImperialHeavy != undefined || kw.ArmorMaterialImperialLight != undefined || kw.WeapMaterialImperial != undefined)
+      {
+         a_entryObject.material        = M.IMPERIAL;
+         a_entryObject.materialDisplay = Tr.translate("$Imperial");
+      }
+      else if(kw.ArmorMaterialStormcloak != undefined)
+      {
+         a_entryObject.material        = M.STORMCLOAK;
+         a_entryObject.materialDisplay = Tr.translate("$Stormcloak");
+      }
+      else if(kw.ArmorMaterialDwarven != undefined || kw.WeapMaterialDwarven != undefined)
+      {
+         a_entryObject.material        = M.DWARVEN;
+         a_entryObject.materialDisplay = Tr.translate("$Dwarven");
+      }
+      else if(kw.ArmorMaterialOrcish != undefined || kw.WeapMaterialOrcish != undefined)
+      {
+         a_entryObject.material        = M.ORCISH;
+         a_entryObject.materialDisplay = Tr.translate("$Orcish");
+      }
+      else if(kw.ArmorMaterialElven != undefined || kw.WeapMaterialElven != undefined)
+      {
+         a_entryObject.material        = M.ELVEN;
+         a_entryObject.materialDisplay = Tr.translate("$Elven");
+      }
+      else if(kw.ArmorMaterialGlass != undefined || kw.WeapMaterialGlass != undefined)
+      {
+         a_entryObject.material        = M.GLASS;
+         a_entryObject.materialDisplay = Tr.translate("$Glass");
+      }
+      else if(kw.ArmorMaterialEbony != undefined || kw.WeapMaterialEbony != undefined)
+      {
+         a_entryObject.material        = M.EBONY;
+         a_entryObject.materialDisplay = Tr.translate("$Ebony");
+      }
+      else if(kw.WeapMaterialSilver != undefined)
+      {
+         a_entryObject.material        = M.SILVER;
+         a_entryObject.materialDisplay = Tr.translate("$Silver");
+      }
+      else if(kw.ArmorMaterialSteelPlate != undefined)
+      {
+         a_entryObject.material        = M.STEELPLATE;
+         a_entryObject.materialDisplay = Tr.translate("$Steel Plate");
+      }
+      else if(kw.ArmorMaterialIronBanded != undefined)
+      {
+         a_entryObject.material        = M.IRONBANDED;
+         a_entryObject.materialDisplay = Tr.translate("$Iron Banded");
+      }
+      else if(kw.ArmorMaterialImperialStudded != undefined)
+      {
+         a_entryObject.material        = M.IMPERIALSTUDDED;
+         a_entryObject.materialDisplay = Tr.translate("$Studded");
+      }
+      else if(kw.ArmorMaterialStudded != undefined)
+      {
+         a_entryObject.material        = M.STUDDED;
+         a_entryObject.materialDisplay = Tr.translate("$Studded");
+      }
+      else if(kw.ArmorMaterialScaled != undefined)
+      {
+         a_entryObject.material        = M.SCALED;
+         a_entryObject.materialDisplay = Tr.translate("$Scaled");
+      }
+      else if(kw.WeapMaterialDraugr != undefined)
+      {
+         a_entryObject.material        = M.DRAUGR;
+         a_entryObject.materialDisplay = Tr.translate("$Draugr");
+      }
+      else if(kw.WeapMaterialDraugrHoned != undefined)
+      {
+         a_entryObject.material        = M.DRAUGRHONED;
+         a_entryObject.materialDisplay = Tr.translate("$Draugr Honed");
+      }
+      else if(kw.WeapMaterialFalmer != undefined)
+      {
+         a_entryObject.material        = M.FALMER;
+         a_entryObject.materialDisplay = Tr.translate("$Falmer");
+      }
+      else if(kw.WeapMaterialFalmerHoned != undefined)
+      {
+         a_entryObject.material        = M.FALMERHONED;
+         a_entryObject.materialDisplay = Tr.translate("$Falmer Honed");
+      }
+      else if(kw.WeapMaterialWood != undefined)
+      {
+         a_entryObject.material        = M.WOOD;
+         a_entryObject.materialDisplay = Tr.translate("$Wood");
+      }
+      else if(kw.ArmorMaterialDaedric != undefined || kw.WeapMaterialDaedric != undefined)
+      {
+         a_entryObject.material        = M.DAEDRIC;
+         a_entryObject.materialDisplay = Tr.translate("$Daedric");
+      }
+      else if(kw.ArmorMaterialDragonplate != undefined)
+      {
+         a_entryObject.material        = M.DRAGONPLATE;
+         a_entryObject.materialDisplay = Tr.translate("$Dragonplate");
+      }
+      else if(kw.ArmorMaterialDragonscale != undefined)
+      {
+         a_entryObject.material        = M.DRAGONSCALE;
+         a_entryObject.materialDisplay = Tr.translate("$Dragonscale");
+      }
+      else if(kw.ArmorMaterialElvenGilded != undefined)
+      {
+         a_entryObject.material        = M.ELVENGILDED;
+         a_entryObject.materialDisplay = Tr.translate("$Elven Gilded");
+      }
+      else if(kw.DLC1ArmorMaterialVampire != undefined)
+      {
+         a_entryObject.material        = M.VAMPIRE;
+         a_entryObject.materialDisplay = Tr.translate("$Vampire");
+      }
+      else if(kw.DLC1ArmorMaterialDawnguard != undefined)
+      {
+         a_entryObject.material        = M.DAWNGUARD;
+         a_entryObject.materialDisplay = Tr.translate("$Dawnguard");
+      }
+      else if(kw.DLC1ArmorMaterialFalmerHardened != undefined || kw.DLC1ArmorMaterialFalmerHeavy != undefined)
+      {
+         a_entryObject.material        = M.FALMERHARDENED;
+         a_entryObject.materialDisplay = Tr.translate("$Falmer Hardened");
+      }
+      else if(kw.DLC1ArmorMaterialHunter != undefined)
+      {
+         a_entryObject.material        = M.HUNTER;
+         a_entryObject.materialDisplay = Tr.translate("$Hunter");
+      }
+      else if(kw.DLC1LD_CraftingMaterialAetherium != undefined)
+      {
+         a_entryObject.material        = M.AETHERIUM;
+         a_entryObject.materialDisplay = Tr.translate("$Aetherium");
+      }
+      else if(kw.DLC1WeapMaterialDragonbone != undefined)
+      {
+         a_entryObject.material        = M.DRAGONBONE;
+         a_entryObject.materialDisplay = Tr.translate("$Dragonbone");
+      }
+      else if(kw.DLC2ArmorMaterialNordicHeavy != undefined || kw.DLC2ArmorMaterialNordicLight != undefined || kw.DLC2WeaponMaterialNordic != undefined)
+      {
+         a_entryObject.material        = M.NORDIC;
+         a_entryObject.materialDisplay = Tr.translate("$Nordic");
+      }
+      else if(kw.DLC2ArmorMaterialBonemoldHeavy != undefined || kw.DLC2ArmorMaterialBonemoldLight != undefined)
+      {
+         a_entryObject.material        = M.BONEMOLD;
+         a_entryObject.materialDisplay = Tr.translate("$Bonemold");
+      }
+      else if(kw.DLC2ArmorMaterialChitinHeavy != undefined || kw.DLC2ArmorMaterialChitinLight != undefined)
+      {
+         a_entryObject.material        = M.CHITIN;
+         a_entryObject.materialDisplay = Tr.translate("$Chitin");
+      }
+      else if(kw.DLC2ArmorMaterialMoragTong != undefined)
+      {
+         a_entryObject.material        = M.MORAGTONG;
+         a_entryObject.materialDisplay = Tr.translate("$Morag Tong");
+      }
+      else if(kw.DLC2ArmorMaterialStalhrimHeavy != undefined || kw.DLC2ArmorMaterialStalhrimLight != undefined || kw.DLC2WeaponMaterialStalhrim != undefined)
+      {
+         // Deathbrand check inlined here — avoids a second pass through the keyword object
+         if(kw.DLC2dunHaknirArmor != undefined)
          {
-            if(kw[keys[j]] != undefined)
-            {
-               matched = true;
-               break;
-            }
+            a_entryObject.material        = M.DEATHBRAND;
+            a_entryObject.materialDisplay = Tr.translate("$Deathbrand");
          }
-         if(matched)
+         else
          {
-            a_entryObject.material        = entry[1];
-            a_entryObject.materialDisplay = skyui.util.Translator.translate(entry[2]);
-            // Special case: Stalhrim can be overridden to Deathbrand
-            if(entry[1] == skyui.defines.Material.STALHRIM && kw.DLC2dunHaknirArmor != undefined)
-            {
-               a_entryObject.material        = skyui.defines.Material.DEATHBRAND;
-               a_entryObject.materialDisplay = skyui.util.Translator.translate("$Deathbrand");
-            }
-            return;
+            a_entryObject.material        = M.STALHRIM;
+            a_entryObject.materialDisplay = Tr.translate("$Stalhrim");
          }
       }
    }
 
    function processWeaponType(a_entryObject)
    {
+      var W  = skyui.defines.Weapon;
+      var Tr = skyui.util.Translator;
+      var wt = a_entryObject.weaponType;
+
       a_entryObject.subType        = null;
-      a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Weapon");
-      switch(a_entryObject.weaponType)
+      a_entryObject.subTypeDisplay = Tr.translate("$Weapon");
+
+      // Ordered: swords and bows most common, then one-handers, two-handers, staves, crossbows last
+      if(wt == W.ANIM_ONEHANDSWORD || wt == W.ANIM_1HS)
       {
-         case skyui.defines.Weapon.ANIM_HANDTOHANDMELEE:
-         case skyui.defines.Weapon.ANIM_H2H:
-            a_entryObject.subType        = skyui.defines.Weapon.TYPE_MELEE;
-            a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Melee");
-            break;
-         case skyui.defines.Weapon.ANIM_ONEHANDSWORD:
-         case skyui.defines.Weapon.ANIM_1HS:
-            a_entryObject.subType        = skyui.defines.Weapon.TYPE_SWORD;
-            a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Sword");
-            break;
-         case skyui.defines.Weapon.ANIM_ONEHANDDAGGER:
-         case skyui.defines.Weapon.ANIM_1HD:
-            a_entryObject.subType        = skyui.defines.Weapon.TYPE_DAGGER;
-            a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Dagger");
-            break;
-         case skyui.defines.Weapon.ANIM_ONEHANDAXE:
-         case skyui.defines.Weapon.ANIM_1HA:
-            a_entryObject.subType        = skyui.defines.Weapon.TYPE_WARAXE;
-            a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$War Axe");
-            break;
-         case skyui.defines.Weapon.ANIM_ONEHANDMACE:
-         case skyui.defines.Weapon.ANIM_1HM:
-            a_entryObject.subType        = skyui.defines.Weapon.TYPE_MACE;
-            a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Mace");
-            break;
-         case skyui.defines.Weapon.ANIM_TWOHANDSWORD:
-         case skyui.defines.Weapon.ANIM_2HS:
-            a_entryObject.subType        = skyui.defines.Weapon.TYPE_GREATSWORD;
-            a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Greatsword");
-            break;
-         case skyui.defines.Weapon.ANIM_TWOHANDAXE:
-         case skyui.defines.Weapon.ANIM_2HA:
-            a_entryObject.subType        = skyui.defines.Weapon.TYPE_BATTLEAXE;
-            a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Battleaxe");
-            if(a_entryObject.keywords != undefined && a_entryObject.keywords.WeapTypeWarhammer != undefined)
-            {
-               a_entryObject.subType        = skyui.defines.Weapon.TYPE_WARHAMMER;
-               a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Warhammer");
-            }
-            break;
-         case skyui.defines.Weapon.ANIM_BOW:
-         case skyui.defines.Weapon.ANIM_BOW2:
-            a_entryObject.subType        = skyui.defines.Weapon.TYPE_BOW;
-            a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Bow");
-            break;
-         case skyui.defines.Weapon.ANIM_STAFF:
-         case skyui.defines.Weapon.ANIM_STAFF2:
-            a_entryObject.subType        = skyui.defines.Weapon.TYPE_STAFF;
-            a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Staff");
-            break;
-         case skyui.defines.Weapon.ANIM_CROSSBOW:
-         case skyui.defines.Weapon.ANIM_CBOW:
-            a_entryObject.subType        = skyui.defines.Weapon.TYPE_CROSSBOW;
-            a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Crossbow");
-         default:
-            return;
+         a_entryObject.subType        = W.TYPE_SWORD;
+         a_entryObject.subTypeDisplay = Tr.translate("$Sword");
+      }
+      else if(wt == W.ANIM_BOW || wt == W.ANIM_BOW2)
+      {
+         a_entryObject.subType        = W.TYPE_BOW;
+         a_entryObject.subTypeDisplay = Tr.translate("$Bow");
+      }
+      else if(wt == W.ANIM_ONEHANDAXE || wt == W.ANIM_1HA)
+      {
+         a_entryObject.subType        = W.TYPE_WARAXE;
+         a_entryObject.subTypeDisplay = Tr.translate("$War Axe");
+      }
+      else if(wt == W.ANIM_ONEHANDDAGGER || wt == W.ANIM_1HD)
+      {
+         a_entryObject.subType        = W.TYPE_DAGGER;
+         a_entryObject.subTypeDisplay = Tr.translate("$Dagger");
+      }
+      else if(wt == W.ANIM_ONEHANDMACE || wt == W.ANIM_1HM)
+      {
+         a_entryObject.subType        = W.TYPE_MACE;
+         a_entryObject.subTypeDisplay = Tr.translate("$Mace");
+      }
+      else if(wt == W.ANIM_TWOHANDSWORD || wt == W.ANIM_2HS)
+      {
+         a_entryObject.subType        = W.TYPE_GREATSWORD;
+         a_entryObject.subTypeDisplay = Tr.translate("$Greatsword");
+      }
+      else if(wt == W.ANIM_TWOHANDAXE || wt == W.ANIM_2HA)
+      {
+         a_entryObject.subType        = W.TYPE_BATTLEAXE;
+         a_entryObject.subTypeDisplay = Tr.translate("$Battleaxe");
+         var kw = a_entryObject.keywords;
+         if(kw != undefined && kw.WeapTypeWarhammer != undefined)
+         {
+            a_entryObject.subType        = W.TYPE_WARHAMMER;
+            a_entryObject.subTypeDisplay = Tr.translate("$Warhammer");
+         }
+      }
+      else if(wt == W.ANIM_STAFF || wt == W.ANIM_STAFF2)
+      {
+         a_entryObject.subType        = W.TYPE_STAFF;
+         a_entryObject.subTypeDisplay = Tr.translate("$Staff");
+      }
+      else if(wt == W.ANIM_CROSSBOW || wt == W.ANIM_CBOW)
+      {
+         a_entryObject.subType        = W.TYPE_CROSSBOW;
+         a_entryObject.subTypeDisplay = Tr.translate("$Crossbow");
+      }
+      else if(wt == W.ANIM_HANDTOHANDMELEE || wt == W.ANIM_H2H)
+      {
+         a_entryObject.subType        = W.TYPE_MELEE;
+         a_entryObject.subTypeDisplay = Tr.translate("$Melee");
       }
    }
 
    function processWeaponBaseId(a_entryObject)
    {
-      switch(a_entryObject.baseId)
+      var W    = skyui.defines.Weapon;
+      var F    = skyui.defines.Form;
+      var Tr   = skyui.util.Translator;
+      var base = a_entryObject.baseId;
+
+      if(base == F.BASEID_WEAPPICKAXE || base == F.BASEID_SSDROCKSPLINTERPICKAXE || base == F.BASEID_DUNVOLUNRUUDPICKAXE)
       {
-         case skyui.defines.Form.BASEID_WEAPPICKAXE:
-         case skyui.defines.Form.BASEID_SSDROCKSPLINTERPICKAXE:
-         case skyui.defines.Form.BASEID_DUNVOLUNRUUDPICKAXE:
-            a_entryObject.subType        = skyui.defines.Weapon.TYPE_PICKAXE;
-            a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Pickaxe");
-            break;
-         case skyui.defines.Form.BASEID_AXE01:
-         case skyui.defines.Form.BASEID_DUNHALTEDSTREAMPOACHERSAXE:
-            a_entryObject.subType        = skyui.defines.Weapon.TYPE_WOODAXE;
-            a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Wood Axe");
-         default:
-            return;
+         a_entryObject.subType        = W.TYPE_PICKAXE;
+         a_entryObject.subTypeDisplay = Tr.translate("$Pickaxe");
+      }
+      else if(base == F.BASEID_AXE01 || base == F.BASEID_DUNHALTEDSTREAMPOACHERSAXE)
+      {
+         a_entryObject.subType        = W.TYPE_WOODAXE;
+         a_entryObject.subTypeDisplay = Tr.translate("$Wood Axe");
       }
    }
 
    function processArmorPartMask(a_entryObject)
    {
-      if(a_entryObject.partMask == undefined)
+      var pm = a_entryObject.partMask;
+      if(pm == undefined) return undefined;
+
+      var A       = skyui.defines.Armor;
+      var Tr      = skyui.util.Translator;
+      var prec    = A.PARTMASK_PRECEDENCE;
+      var precLen = prec.length;
+      var mpm;
+
+      for(var i = 0; i < precLen; i++)
       {
-         return undefined;
-      }
-      var _loc2_ = 0;
-      while(_loc2_ < skyui.defines.Armor.PARTMASK_PRECEDENCE.length)
-      {
-         if(a_entryObject.partMask & skyui.defines.Armor.PARTMASK_PRECEDENCE[_loc2_])
+         if(pm & prec[i])
          {
-            a_entryObject.mainPartMask = skyui.defines.Armor.PARTMASK_PRECEDENCE[_loc2_];
+            mpm = prec[i];
+            a_entryObject.mainPartMask = mpm;
             break;
          }
-         _loc2_ = _loc2_ + 1;
       }
-      if(a_entryObject.mainPartMask == undefined)
+      if(mpm == undefined) return undefined;
+
+      // Ordered: body/head/feet/hands most common armor slots
+      if(mpm == A.PARTMASK_BODY)
       {
-         return undefined;
+         a_entryObject.subType        = A.EQUIP_BODY;
+         a_entryObject.subTypeDisplay = Tr.translate("$Body");
       }
-      switch(a_entryObject.mainPartMask)
+      else if(mpm == A.PARTMASK_HEAD)
       {
-         case skyui.defines.Armor.PARTMASK_HEAD:
-            a_entryObject.subType        = skyui.defines.Armor.EQUIP_HEAD;
-            a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Head");
-            return;
-         case skyui.defines.Armor.PARTMASK_HAIR:
-            a_entryObject.subType        = skyui.defines.Armor.EQUIP_HAIR;
-            a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Head");
-            return;
-         case skyui.defines.Armor.PARTMASK_LONGHAIR:
-            a_entryObject.subType        = skyui.defines.Armor.EQUIP_LONGHAIR;
-            a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Head");
-            return;
-         case skyui.defines.Armor.PARTMASK_BODY:
-            a_entryObject.subType        = skyui.defines.Armor.EQUIP_BODY;
-            a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Body");
-            return;
-         case skyui.defines.Armor.PARTMASK_HANDS:
-            a_entryObject.subType        = skyui.defines.Armor.EQUIP_HANDS;
-            a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Hands");
-            return;
-         case skyui.defines.Armor.PARTMASK_FOREARMS:
-            a_entryObject.subType        = skyui.defines.Armor.EQUIP_FOREARMS;
-            a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Forearms");
-            return;
-         case skyui.defines.Armor.PARTMASK_AMULET:
-            a_entryObject.subType        = skyui.defines.Armor.EQUIP_AMULET;
-            a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Amulet");
-            return;
-         case skyui.defines.Armor.PARTMASK_RING:
-            a_entryObject.subType        = skyui.defines.Armor.EQUIP_RING;
-            a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Ring");
-            return;
-         case skyui.defines.Armor.PARTMASK_FEET:
-            a_entryObject.subType        = skyui.defines.Armor.EQUIP_FEET;
-            a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Feet");
-            return;
-         case skyui.defines.Armor.PARTMASK_CALVES:
-            a_entryObject.subType        = skyui.defines.Armor.EQUIP_CALVES;
-            a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Calves");
-            return;
-         case skyui.defines.Armor.PARTMASK_SHIELD:
-            a_entryObject.subType        = skyui.defines.Armor.EQUIP_SHIELD;
-            a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Shield");
-            return;
-         case skyui.defines.Armor.PARTMASK_CIRCLET:
-            a_entryObject.subType        = skyui.defines.Armor.EQUIP_CIRCLET;
-            a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Circlet");
-            return;
-         case skyui.defines.Armor.PARTMASK_EARS:
-            a_entryObject.subType        = skyui.defines.Armor.EQUIP_EARS;
-            a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Ears");
-            return;
-         case skyui.defines.Armor.PARTMASK_TAIL:
-            a_entryObject.subType        = skyui.defines.Armor.EQUIP_TAIL;
-            a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Tail");
-            return;
-         default:
-            a_entryObject.subType = a_entryObject.mainPartMask;
-            return;
+         a_entryObject.subType        = A.EQUIP_HEAD;
+         a_entryObject.subTypeDisplay = Tr.translate("$Head");
+      }
+      else if(mpm == A.PARTMASK_FEET)
+      {
+         a_entryObject.subType        = A.EQUIP_FEET;
+         a_entryObject.subTypeDisplay = Tr.translate("$Feet");
+      }
+      else if(mpm == A.PARTMASK_HANDS)
+      {
+         a_entryObject.subType        = A.EQUIP_HANDS;
+         a_entryObject.subTypeDisplay = Tr.translate("$Hands");
+      }
+      else if(mpm == A.PARTMASK_SHIELD)
+      {
+         a_entryObject.subType        = A.EQUIP_SHIELD;
+         a_entryObject.subTypeDisplay = Tr.translate("$Shield");
+      }
+      else if(mpm == A.PARTMASK_RING)
+      {
+         a_entryObject.subType        = A.EQUIP_RING;
+         a_entryObject.subTypeDisplay = Tr.translate("$Ring");
+      }
+      else if(mpm == A.PARTMASK_AMULET)
+      {
+         a_entryObject.subType        = A.EQUIP_AMULET;
+         a_entryObject.subTypeDisplay = Tr.translate("$Amulet");
+      }
+      else if(mpm == A.PARTMASK_CIRCLET)
+      {
+         a_entryObject.subType        = A.EQUIP_CIRCLET;
+         a_entryObject.subTypeDisplay = Tr.translate("$Circlet");
+      }
+      else if(mpm == A.PARTMASK_HAIR)
+      {
+         a_entryObject.subType        = A.EQUIP_HAIR;
+         a_entryObject.subTypeDisplay = Tr.translate("$Head");
+      }
+      else if(mpm == A.PARTMASK_LONGHAIR)
+      {
+         a_entryObject.subType        = A.EQUIP_LONGHAIR;
+         a_entryObject.subTypeDisplay = Tr.translate("$Head");
+      }
+      else if(mpm == A.PARTMASK_FOREARMS)
+      {
+         a_entryObject.subType        = A.EQUIP_FOREARMS;
+         a_entryObject.subTypeDisplay = Tr.translate("$Forearms");
+      }
+      else if(mpm == A.PARTMASK_CALVES)
+      {
+         a_entryObject.subType        = A.EQUIP_CALVES;
+         a_entryObject.subTypeDisplay = Tr.translate("$Calves");
+      }
+      else if(mpm == A.PARTMASK_EARS)
+      {
+         a_entryObject.subType        = A.EQUIP_EARS;
+         a_entryObject.subTypeDisplay = Tr.translate("$Ears");
+      }
+      else if(mpm == A.PARTMASK_TAIL)
+      {
+         a_entryObject.subType        = A.EQUIP_TAIL;
+         a_entryObject.subTypeDisplay = Tr.translate("$Tail");
+      }
+      else
+      {
+         a_entryObject.subType = mpm;
       }
    }
 
    function processArmorOther(a_entryObject)
    {
-      if(a_entryObject.weightClass != null)
+      if(a_entryObject.weightClass != null) return undefined;
+
+      var A   = skyui.defines.Armor;
+      var Tr  = skyui.util.Translator;
+      var mpm = a_entryObject.mainPartMask;
+
+      if(mpm == A.PARTMASK_BODY    || mpm == A.PARTMASK_HEAD     || mpm == A.PARTMASK_FEET
+      || mpm == A.PARTMASK_HANDS   || mpm == A.PARTMASK_SHIELD   || mpm == A.PARTMASK_FOREARMS
+      || mpm == A.PARTMASK_CALVES  || mpm == A.PARTMASK_HAIR     || mpm == A.PARTMASK_LONGHAIR
+      || mpm == A.PARTMASK_TAIL)
       {
-         return undefined;
+         a_entryObject.weightClass        = A.WEIGHT_CLOTHING;
+         a_entryObject.weightClassDisplay = Tr.translate("$Clothing");
       }
-      switch(a_entryObject.mainPartMask)
+      else if(mpm == A.PARTMASK_AMULET || mpm == A.PARTMASK_RING
+           || mpm == A.PARTMASK_CIRCLET || mpm == A.PARTMASK_EARS)
       {
-         case skyui.defines.Armor.PARTMASK_HEAD:
-         case skyui.defines.Armor.PARTMASK_HAIR:
-         case skyui.defines.Armor.PARTMASK_LONGHAIR:
-         case skyui.defines.Armor.PARTMASK_BODY:
-         case skyui.defines.Armor.PARTMASK_HANDS:
-         case skyui.defines.Armor.PARTMASK_FOREARMS:
-         case skyui.defines.Armor.PARTMASK_FEET:
-         case skyui.defines.Armor.PARTMASK_CALVES:
-         case skyui.defines.Armor.PARTMASK_SHIELD:
-         case skyui.defines.Armor.PARTMASK_TAIL:
-            a_entryObject.weightClass        = skyui.defines.Armor.WEIGHT_CLOTHING;
-            a_entryObject.weightClassDisplay = skyui.util.Translator.translate("$Clothing");
-            break;
-         case skyui.defines.Armor.PARTMASK_AMULET:
-         case skyui.defines.Armor.PARTMASK_RING:
-         case skyui.defines.Armor.PARTMASK_CIRCLET:
-         case skyui.defines.Armor.PARTMASK_EARS:
-            a_entryObject.weightClass        = skyui.defines.Armor.WEIGHT_JEWELRY;
-            a_entryObject.weightClassDisplay = skyui.util.Translator.translate("$Jewelry");
-         default:
-            return;
+         a_entryObject.weightClass        = A.WEIGHT_JEWELRY;
+         a_entryObject.weightClassDisplay = Tr.translate("$Jewelry");
       }
    }
 
    function processArmorBaseId(a_entryObject)
    {
-      switch(a_entryObject.baseId)
+      var F    = skyui.defines.Form;
+      var A    = skyui.defines.Armor;
+      var Tr   = skyui.util.Translator;
+      var base = a_entryObject.baseId;
+
+      if(base == F.BASEID_CLOTHESWEDDINGWREATH)
       {
-         case skyui.defines.Form.BASEID_CLOTHESWEDDINGWREATH:
-            a_entryObject.weightClass        = skyui.defines.Armor.WEIGHT_JEWELRY;
-            a_entryObject.weightClassDisplay = skyui.util.Translator.translate("$Jewelry");
-            break;
-         case skyui.defines.Form.BASEID_DLC1CLOTHESVAMPIRELORDARMOR:
-            a_entryObject.subType        = skyui.defines.Armor.EQUIP_BODY;
-            a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Body");
-         default:
-            return;
+         a_entryObject.weightClass        = A.WEIGHT_JEWELRY;
+         a_entryObject.weightClassDisplay = Tr.translate("$Jewelry");
+      }
+      else if(base == F.BASEID_DLC1CLOTHESVAMPIRELORDARMOR)
+      {
+         a_entryObject.subType        = A.EQUIP_BODY;
+         a_entryObject.subTypeDisplay = Tr.translate("$Body");
       }
    }
 
    function processBookType(a_entryObject)
    {
-      a_entryObject.subType        = skyui.defines.Item.OTHER;
-      a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Book");
-      a_entryObject.isRead         = (a_entryObject.flags & skyui.defines.Item.BOOKFLAG_READ) != 0;
+      var I  = skyui.defines.Item;
+      var Tr = skyui.util.Translator;
 
-      if(a_entryObject.bookType == skyui.defines.Item.BOOKTYPE_NOTE)
+      a_entryObject.subType        = I.OTHER;
+      a_entryObject.subTypeDisplay = Tr.translate("$Book");
+      a_entryObject.isRead         = (a_entryObject.flags & I.BOOKFLAG_READ) != 0;
+
+      if(a_entryObject.bookType == I.BOOKTYPE_NOTE)
       {
-         a_entryObject.subType        = skyui.defines.Item.BOOK_NOTE;
-         a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Note");
+         a_entryObject.subType        = I.BOOK_NOTE;
+         a_entryObject.subTypeDisplay = Tr.translate("$Note");
       }
-      if(a_entryObject.keywords == undefined)
+
+      var kw = a_entryObject.keywords;
+      if(kw == undefined) return undefined;
+
+      // Spell tomes checked first — more common than recipes in practice
+      if(kw.VendorItemSpellTome != undefined)
       {
-         return undefined;
+         a_entryObject.subType        = I.BOOK_SPELLTOME;
+         a_entryObject.subTypeDisplay = Tr.translate("$Spell Tome");
       }
-      if(a_entryObject.keywords.VendorItemRecipe != undefined)
+      else if(kw.VendorItemRecipe != undefined)
       {
-         a_entryObject.subType        = skyui.defines.Item.BOOK_RECIPE;
-         a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Recipe");
-      }
-      else if(a_entryObject.keywords.VendorItemSpellTome != undefined)
-      {
-         a_entryObject.subType        = skyui.defines.Item.BOOK_SPELLTOME;
-         a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Spell Tome");
+         a_entryObject.subType        = I.BOOK_RECIPE;
+         a_entryObject.subTypeDisplay = Tr.translate("$Recipe");
       }
    }
 
    function processAmmoType(a_entryObject)
    {
-      if((a_entryObject.flags & skyui.defines.Weapon.AMMOFLAG_NONBOLT) != 0)
+      var W  = skyui.defines.Weapon;
+      var Tr = skyui.util.Translator;
+
+      if((a_entryObject.flags & W.AMMOFLAG_NONBOLT) != 0)
       {
-         a_entryObject.subType        = skyui.defines.Weapon.AMMO_ARROW;
-         a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Arrow");
+         a_entryObject.subType        = W.AMMO_ARROW;
+         a_entryObject.subTypeDisplay = Tr.translate("$Arrow");
       }
       else
       {
-         a_entryObject.subType        = skyui.defines.Weapon.AMMO_BOLT;
-         a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Bolt");
+         a_entryObject.subType        = W.AMMO_BOLT;
+         a_entryObject.subTypeDisplay = Tr.translate("$Bolt");
       }
    }
 
    function processAmmoBaseId(a_entryObject)
    {
-      switch(a_entryObject.baseId)
+      var F    = skyui.defines.Form;
+      var M    = skyui.defines.Material;
+      var Tr   = skyui.util.Translator;
+      var base = a_entryObject.baseId;
+
+      // Ordered: iron/steel/dwarven arrows are most commonly encountered
+      if(base == F.BASEID_IRONARROW           || base == F.BASEID_CWARROW
+      || base == F.BASEID_CWARROWSHORT        || base == F.BASEID_TRAPDART
+      || base == F.BASEID_DUNARCHERPRATICEARROW
+      || base == F.BASEID_DUNGEIRMUNDSIGDISARROWSILLUSION
+      || base == F.BASEID_FOLLOWERIRONARROW   || base == F.BASEID_TESTDLC1BOLT)
       {
-         case skyui.defines.Form.BASEID_DAEDRICARROW:
-            a_entryObject.material        = skyui.defines.Material.DAEDRIC;
-            a_entryObject.materialDisplay = skyui.util.Translator.translate("$Daedric");
-            break;
-         case skyui.defines.Form.BASEID_EBONYARROW:
-            a_entryObject.material        = skyui.defines.Material.EBONY;
-            a_entryObject.materialDisplay = skyui.util.Translator.translate("$Ebony");
-            break;
-         case skyui.defines.Form.BASEID_GLASSARROW:
-            a_entryObject.material        = skyui.defines.Material.GLASS;
-            a_entryObject.materialDisplay = skyui.util.Translator.translate("$Glass");
-            break;
-         case skyui.defines.Form.BASEID_ELVENARROW:
-         case skyui.defines.Form.BASEID_DLC1ELVENARROWBLESSED:
-         case skyui.defines.Form.BASEID_DLC1ELVENARROWBLOOD:
-            a_entryObject.material        = skyui.defines.Material.ELVEN;
-            a_entryObject.materialDisplay = skyui.util.Translator.translate("$Elven");
-            break;
-         case skyui.defines.Form.BASEID_DWARVENARROW:
-         case skyui.defines.Form.BASEID_DWARVENSPHEREARROW:
-         case skyui.defines.Form.BASEID_DWARVENSPHEREBOLT01:
-         case skyui.defines.Form.BASEID_DWARVENSPHEREBOLT02:
-         case skyui.defines.Form.BASEID_DLC2DWARVENBALLISTABOLT:
-            a_entryObject.material        = skyui.defines.Material.DWARVEN;
-            a_entryObject.materialDisplay = skyui.util.Translator.translate("$Dwarven");
-            break;
-         case skyui.defines.Form.BASEID_ORCISHARROW:
-            a_entryObject.material        = skyui.defines.Material.ORCISH;
-            a_entryObject.materialDisplay = skyui.util.Translator.translate("$Orcish");
-            break;
-         case skyui.defines.Form.BASEID_NORDHEROARROW:
-            a_entryObject.material        = skyui.defines.Material.NORDIC;
-            a_entryObject.materialDisplay = skyui.util.Translator.translate("$Nordic");
-            break;
-         case skyui.defines.Form.BASEID_DRAUGRARROW:
-            a_entryObject.material        = skyui.defines.Material.DRAUGR;
-            a_entryObject.materialDisplay = skyui.util.Translator.translate("$Draugr");
-            break;
-         case skyui.defines.Form.BASEID_FALMERARROW:
-            a_entryObject.material        = skyui.defines.Material.FALMER;
-            a_entryObject.materialDisplay = skyui.util.Translator.translate("$Falmer");
-            break;
-         case skyui.defines.Form.BASEID_STEELARROW:
-         case skyui.defines.Form.BASEID_MQ101STEELARROW:
-            a_entryObject.material        = skyui.defines.Material.STEEL;
-            a_entryObject.materialDisplay = skyui.util.Translator.translate("$Steel");
-            break;
-         case skyui.defines.Form.BASEID_IRONARROW:
-         case skyui.defines.Form.BASEID_CWARROW:
-         case skyui.defines.Form.BASEID_CWARROWSHORT:
-         case skyui.defines.Form.BASEID_TRAPDART:
-         case skyui.defines.Form.BASEID_DUNARCHERPRATICEARROW:
-         case skyui.defines.Form.BASEID_DUNGEIRMUNDSIGDISARROWSILLUSION:
-         case skyui.defines.Form.BASEID_FOLLOWERIRONARROW:
-         case skyui.defines.Form.BASEID_TESTDLC1BOLT:
-            a_entryObject.material        = skyui.defines.Material.IRON;
-            a_entryObject.materialDisplay = skyui.util.Translator.translate("$Iron");
-            break;
-         case skyui.defines.Form.BASEID_FORSWORNARROW:
-            a_entryObject.material        = skyui.defines.Material.HIDE;
-            a_entryObject.materialDisplay = skyui.util.Translator.translate("$Forsworn");
-            break;
-         case skyui.defines.Form.BASEID_DLC2RIEKLINGSPEARTHROWN:
-            a_entryObject.material        = skyui.defines.Material.WOOD;
-            a_entryObject.materialDisplay = skyui.util.Translator.translate("$Wood");
-            a_entryObject.subTypeDisplay  = skyui.util.Translator.translate("$Spear");
-         default:
-            return;
+         a_entryObject.material        = M.IRON;
+         a_entryObject.materialDisplay = Tr.translate("$Iron");
+      }
+      else if(base == F.BASEID_STEELARROW || base == F.BASEID_MQ101STEELARROW)
+      {
+         a_entryObject.material        = M.STEEL;
+         a_entryObject.materialDisplay = Tr.translate("$Steel");
+      }
+      else if(base == F.BASEID_DWARVENARROW       || base == F.BASEID_DWARVENSPHEREARROW
+           || base == F.BASEID_DWARVENSPHEREBOLT01 || base == F.BASEID_DWARVENSPHEREBOLT02
+           || base == F.BASEID_DLC2DWARVENBALLISTABOLT)
+      {
+         a_entryObject.material        = M.DWARVEN;
+         a_entryObject.materialDisplay = Tr.translate("$Dwarven");
+      }
+      else if(base == F.BASEID_ELVENARROW || base == F.BASEID_DLC1ELVENARROWBLESSED || base == F.BASEID_DLC1ELVENARROWBLOOD)
+      {
+         a_entryObject.material        = M.ELVEN;
+         a_entryObject.materialDisplay = Tr.translate("$Elven");
+      }
+      else if(base == F.BASEID_ORCISHARROW)
+      {
+         a_entryObject.material        = M.ORCISH;
+         a_entryObject.materialDisplay = Tr.translate("$Orcish");
+      }
+      else if(base == F.BASEID_FORSWORNARROW)
+      {
+         a_entryObject.material        = M.HIDE;
+         a_entryObject.materialDisplay = Tr.translate("$Forsworn");
+      }
+      else if(base == F.BASEID_DRAUGRARROW)
+      {
+         a_entryObject.material        = M.DRAUGR;
+         a_entryObject.materialDisplay = Tr.translate("$Draugr");
+      }
+      else if(base == F.BASEID_FALMERARROW)
+      {
+         a_entryObject.material        = M.FALMER;
+         a_entryObject.materialDisplay = Tr.translate("$Falmer");
+      }
+      else if(base == F.BASEID_GLASSARROW)
+      {
+         a_entryObject.material        = M.GLASS;
+         a_entryObject.materialDisplay = Tr.translate("$Glass");
+      }
+      else if(base == F.BASEID_EBONYARROW)
+      {
+         a_entryObject.material        = M.EBONY;
+         a_entryObject.materialDisplay = Tr.translate("$Ebony");
+      }
+      else if(base == F.BASEID_NORDHEROARROW)
+      {
+         a_entryObject.material        = M.NORDIC;
+         a_entryObject.materialDisplay = Tr.translate("$Nordic");
+      }
+      else if(base == F.BASEID_DAEDRICARROW)
+      {
+         a_entryObject.material        = M.DAEDRIC;
+         a_entryObject.materialDisplay = Tr.translate("$Daedric");
+      }
+      else if(base == F.BASEID_DLC2RIEKLINGSPEARTHROWN)
+      {
+         a_entryObject.material        = M.WOOD;
+         a_entryObject.materialDisplay = Tr.translate("$Wood");
+         a_entryObject.subTypeDisplay  = Tr.translate("$Spear");
       }
    }
 
@@ -543,226 +731,257 @@ class InventoryDataSetter extends ItemcardDataExtender
 
    function processPotionType(a_entryObject)
    {
-      a_entryObject.subType        = skyui.defines.Item.POTION_POTION;
-      a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Potion");
+      var I  = skyui.defines.Item;
+      var Ac = skyui.defines.Actor;
+      var F  = skyui.defines.Form;
+      var Tr = skyui.util.Translator;
+      var fl = a_entryObject.flags;
 
-      if((a_entryObject.flags & skyui.defines.Item.ALCHFLAG_FOOD) != 0)
+      a_entryObject.subType        = I.POTION_POTION;
+      a_entryObject.subTypeDisplay = Tr.translate("$Potion");
+
+      if((fl & I.ALCHFLAG_FOOD) != 0)
       {
-         a_entryObject.subType        = skyui.defines.Item.POTION_FOOD;
-         a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Food");
-         if(a_entryObject.useSound.formId != undefined && a_entryObject.useSound.formId == skyui.defines.Form.FORMID_ITMPotionUse)
+         a_entryObject.subType        = I.POTION_FOOD;
+         a_entryObject.subTypeDisplay = Tr.translate("$Food");
+         var us = a_entryObject.useSound;
+         if(us.formId != undefined && us.formId == F.FORMID_ITMPotionUse)
          {
-            a_entryObject.subType        = skyui.defines.Item.POTION_DRINK;
-            a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Drink");
+            a_entryObject.subType        = I.POTION_DRINK;
+            a_entryObject.subTypeDisplay = Tr.translate("$Drink");
          }
       }
-      else if((a_entryObject.flags & skyui.defines.Item.ALCHFLAG_POISON) != 0)
+      else if((fl & I.ALCHFLAG_POISON) != 0)
       {
-         a_entryObject.subType        = skyui.defines.Item.POTION_POISON;
-         a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Poison");
+         a_entryObject.subType        = I.POTION_POISON;
+         a_entryObject.subTypeDisplay = Tr.translate("$Poison");
       }
       else
       {
-         switch(a_entryObject.actorValue)
+         var av = a_entryObject.actorValue;
+         if(av == Ac.AV_HEALTH)
          {
-            case skyui.defines.Actor.AV_HEALTH:
-               a_entryObject.subType        = skyui.defines.Item.POTION_HEALTH;
-               a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Health");
-               break;
-            case skyui.defines.Actor.AV_MAGICKA:
-               a_entryObject.subType        = skyui.defines.Item.POTION_MAGICKA;
-               a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Magicka");
-               break;
-            case skyui.defines.Actor.AV_STAMINA:
-               a_entryObject.subType        = skyui.defines.Item.POTION_STAMINA;
-               a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Stamina");
-               break;
-            case skyui.defines.Actor.AV_HEALRATE:
-               a_entryObject.subType        = skyui.defines.Item.POTION_HEALRATE;
-               a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Health");
-               break;
-            case skyui.defines.Actor.AV_MAGICKARATE:
-               a_entryObject.subType        = skyui.defines.Item.POTION_MAGICKARATE;
-               a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Magicka");
-               break;
-            case skyui.defines.Actor.AV_STAMINARATE:
-               a_entryObject.subType        = skyui.defines.Item.POTION_STAMINARATE;
-               a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Stamina");
-               break;
-            case skyui.defines.Actor.AV_HEALRATEMULT:
-               a_entryObject.subType        = skyui.defines.Item.POTION_HEALRATEMULT;
-               a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Health");
-               break;
-            case skyui.defines.Actor.AV_MAGICKARATEMULT:
-               a_entryObject.subType        = skyui.defines.Item.POTION_MAGICKARATEMULT;
-               a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Magicka");
-               break;
-            case skyui.defines.Actor.AV_STAMINARATEMULT:
-               a_entryObject.subType        = skyui.defines.Item.POTION_STAMINARATEMULT;
-               a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Stamina");
-               break;
-            case skyui.defines.Actor.AV_FIRERESIST:
-               a_entryObject.subType = skyui.defines.Item.POTION_FIRERESIST;
-               break;
-            case skyui.defines.Actor.AV_ELECTRICRESIST:
-               a_entryObject.subType = skyui.defines.Item.POTION_ELECTRICRESIST;
-               break;
-            case skyui.defines.Actor.AV_FROSTRESIST:
-               a_entryObject.subType = skyui.defines.Item.POTION_FROSTRESIST;
-            default:
-               return;
+            a_entryObject.subType        = I.POTION_HEALTH;
+            a_entryObject.subTypeDisplay = Tr.translate("$Health");
+         }
+         else if(av == Ac.AV_MAGICKA)
+         {
+            a_entryObject.subType        = I.POTION_MAGICKA;
+            a_entryObject.subTypeDisplay = Tr.translate("$Magicka");
+         }
+         else if(av == Ac.AV_STAMINA)
+         {
+            a_entryObject.subType        = I.POTION_STAMINA;
+            a_entryObject.subTypeDisplay = Tr.translate("$Stamina");
+         }
+         else if(av == Ac.AV_HEALRATE)
+         {
+            a_entryObject.subType        = I.POTION_HEALRATE;
+            a_entryObject.subTypeDisplay = Tr.translate("$Health");
+         }
+         else if(av == Ac.AV_MAGICKARATE)
+         {
+            a_entryObject.subType        = I.POTION_MAGICKARATE;
+            a_entryObject.subTypeDisplay = Tr.translate("$Magicka");
+         }
+         else if(av == Ac.AV_STAMINARATE)
+         {
+            a_entryObject.subType        = I.POTION_STAMINARATE;
+            a_entryObject.subTypeDisplay = Tr.translate("$Stamina");
+         }
+         else if(av == Ac.AV_HEALRATEMULT)
+         {
+            a_entryObject.subType        = I.POTION_HEALRATEMULT;
+            a_entryObject.subTypeDisplay = Tr.translate("$Health");
+         }
+         else if(av == Ac.AV_MAGICKARATEMULT)
+         {
+            a_entryObject.subType        = I.POTION_MAGICKARATEMULT;
+            a_entryObject.subTypeDisplay = Tr.translate("$Magicka");
+         }
+         else if(av == Ac.AV_STAMINARATEMULT)
+         {
+            a_entryObject.subType        = I.POTION_STAMINARATEMULT;
+            a_entryObject.subTypeDisplay = Tr.translate("$Stamina");
+         }
+         else if(av == Ac.AV_FIRERESIST)
+         {
+            a_entryObject.subType = I.POTION_FIRERESIST;
+         }
+         else if(av == Ac.AV_ELECTRICRESIST)
+         {
+            a_entryObject.subType = I.POTION_ELECTRICRESIST;
+         }
+         else if(av == Ac.AV_FROSTRESIST)
+         {
+            a_entryObject.subType = I.POTION_FROSTRESIST;
          }
       }
    }
 
    function processSoulGemType(a_entryObject)
    {
-      a_entryObject.subType        = skyui.defines.Item.OTHER;
-      a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Soul Gem");
-      if(a_entryObject.gemSize != undefined && a_entryObject.gemSize != skyui.defines.Item.SOULGEM_NONE)
+      var I  = skyui.defines.Item;
+      var Tr = skyui.util.Translator;
+      var gs = a_entryObject.gemSize;
+
+      a_entryObject.subType        = I.OTHER;
+      a_entryObject.subTypeDisplay = Tr.translate("$Soul Gem");
+      if(gs != undefined && gs != I.SOULGEM_NONE)
       {
-         a_entryObject.subType = a_entryObject.gemSize;
+         a_entryObject.subType = gs;
       }
    }
 
    function processSoulGemStatus(a_entryObject)
    {
-      if(a_entryObject.gemSize == undefined || a_entryObject.soulSize == undefined || a_entryObject.soulSize == skyui.defines.Item.SOULGEM_NONE)
+      var I  = skyui.defines.Item;
+      var gs = a_entryObject.gemSize;
+      var ss = a_entryObject.soulSize;
+
+      if(gs == undefined || ss == undefined || ss == I.SOULGEM_NONE)
       {
-         a_entryObject.status = skyui.defines.Item.SOULGEMSTATUS_EMPTY;
+         a_entryObject.status = I.SOULGEMSTATUS_EMPTY;
       }
-      else if(a_entryObject.soulSize >= a_entryObject.gemSize)
+      else if(ss >= gs)
       {
-         a_entryObject.status = skyui.defines.Item.SOULGEMSTATUS_FULL;
+         a_entryObject.status = I.SOULGEMSTATUS_FULL;
       }
       else
       {
-         a_entryObject.status = skyui.defines.Item.SOULGEMSTATUS_PARTIAL;
+         a_entryObject.status = I.SOULGEMSTATUS_PARTIAL;
       }
    }
 
    function processSoulGemBaseId(a_entryObject)
    {
-      switch(a_entryObject.baseId)
+      var F    = skyui.defines.Form;
+      var I    = skyui.defines.Item;
+      var base = a_entryObject.baseId;
+
+      if(base == F.BASEID_DA01SOULGEMBLACKSTAR || base == F.BASEID_DA01SOULGEMAZURASSTAR)
       {
-         case skyui.defines.Form.BASEID_DA01SOULGEMBLACKSTAR:
-         case skyui.defines.Form.BASEID_DA01SOULGEMAZURASSTAR:
-            a_entryObject.subType = skyui.defines.Item.SOULGEM_AZURA;
-         default:
-            return;
+         a_entryObject.subType = I.SOULGEM_AZURA;
       }
    }
 
    function processMiscType(a_entryObject)
    {
-      a_entryObject.subType        = skyui.defines.Item.OTHER;
-      a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Misc");
+      var I  = skyui.defines.Item;
+      var Tr = skyui.util.Translator;
+
+      a_entryObject.subType        = I.OTHER;
+      a_entryObject.subTypeDisplay = Tr.translate("$Misc");
 
       var kw = a_entryObject.keywords;
       if(kw == undefined) return undefined;
 
-      if(kw.BYOHAdoptionClothesKeyword != undefined)
+      // Ordered: crafting materials (ingot, hide, clutter) most common in typical inventory
+      if(kw.VendorItemOreIngot != undefined)
       {
-         a_entryObject.subType        = skyui.defines.Item.MISC_CHILDRENSCLOTHES;
-         a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Clothing");
-      }
-      else if(kw.BYOHAdoptionToyKeyword != undefined)
-      {
-         a_entryObject.subType        = skyui.defines.Item.MISC_TOY;
-         a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Toy");
-      }
-      else if(kw.BYOHHouseCraftingCategoryWeaponRacks != undefined
-           || kw.BYOHHouseCraftingCategoryShelf != undefined
-           || kw.BYOHHouseCraftingCategoryFurniture != undefined
-           || kw.BYOHHouseCraftingCategoryExterior != undefined
-           || kw.BYOHHouseCraftingCategoryContainers != undefined
-           || kw.BYOHHouseCraftingCategoryBuilding != undefined
-           || kw.BYOHHouseCraftingCategorySmithing != undefined)
-      {
-         a_entryObject.subType        = skyui.defines.Item.MISC_HOUSEPART;
-         a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$House Part");
-      }
-      else if(kw.VendorItemDaedricArtifact != undefined)
-      {
-         a_entryObject.subType        = skyui.defines.Item.MISC_ARTIFACT;
-         a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Artifact");
-      }
-      else if(kw.VendorItemGem != undefined)
-      {
-         a_entryObject.subType        = skyui.defines.Item.MISC_GEM;
-         a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Gem");
-      }
-      else if(kw.VendorItemAnimalHide != undefined)
-      {
-         a_entryObject.subType        = skyui.defines.Item.MISC_HIDE;
-         a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Hide");
-      }
-      else if(kw.VendorItemTool != undefined)
-      {
-         a_entryObject.subType        = skyui.defines.Item.MISC_TOOL;
-         a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Tool");
-      }
-      else if(kw.VendorItemAnimalPart != undefined)
-      {
-         a_entryObject.subType        = skyui.defines.Item.MISC_REMAINS;
-         a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Remains");
-      }
-      else if(kw.VendorItemOreIngot != undefined)
-      {
-         a_entryObject.subType        = skyui.defines.Item.MISC_INGOT;
-         a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Ingot");
+         a_entryObject.subType        = I.MISC_INGOT;
+         a_entryObject.subTypeDisplay = Tr.translate("$Ingot");
       }
       else if(kw.VendorItemClutter != undefined)
       {
-         a_entryObject.subType        = skyui.defines.Item.MISC_CLUTTER;
-         a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Clutter");
+         a_entryObject.subType        = I.MISC_CLUTTER;
+         a_entryObject.subTypeDisplay = Tr.translate("$Clutter");
+      }
+      else if(kw.VendorItemAnimalHide != undefined)
+      {
+         a_entryObject.subType        = I.MISC_HIDE;
+         a_entryObject.subTypeDisplay = Tr.translate("$Hide");
+      }
+      else if(kw.VendorItemAnimalPart != undefined)
+      {
+         a_entryObject.subType        = I.MISC_REMAINS;
+         a_entryObject.subTypeDisplay = Tr.translate("$Remains");
+      }
+      else if(kw.VendorItemGem != undefined)
+      {
+         a_entryObject.subType        = I.MISC_GEM;
+         a_entryObject.subTypeDisplay = Tr.translate("$Gem");
+      }
+      else if(kw.VendorItemTool != undefined)
+      {
+         a_entryObject.subType        = I.MISC_TOOL;
+         a_entryObject.subTypeDisplay = Tr.translate("$Tool");
       }
       else if(kw.VendorItemFirewood != undefined)
       {
-         a_entryObject.subType        = skyui.defines.Item.MISC_FIREWOOD;
-         a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Firewood");
+         a_entryObject.subType        = I.MISC_FIREWOOD;
+         a_entryObject.subTypeDisplay = Tr.translate("$Firewood");
+      }
+      else if(kw.VendorItemDaedricArtifact != undefined)
+      {
+         a_entryObject.subType        = I.MISC_ARTIFACT;
+         a_entryObject.subTypeDisplay = Tr.translate("$Artifact");
+      }
+      else if(kw.BYOHHouseCraftingCategoryWeaponRacks != undefined
+           || kw.BYOHHouseCraftingCategoryShelf       != undefined
+           || kw.BYOHHouseCraftingCategoryFurniture   != undefined
+           || kw.BYOHHouseCraftingCategoryExterior    != undefined
+           || kw.BYOHHouseCraftingCategoryContainers  != undefined
+           || kw.BYOHHouseCraftingCategoryBuilding    != undefined
+           || kw.BYOHHouseCraftingCategorySmithing    != undefined)
+      {
+         a_entryObject.subType        = I.MISC_HOUSEPART;
+         a_entryObject.subTypeDisplay = Tr.translate("$House Part");
+      }
+      else if(kw.BYOHAdoptionClothesKeyword != undefined)
+      {
+         a_entryObject.subType        = I.MISC_CHILDRENSCLOTHES;
+         a_entryObject.subTypeDisplay = Tr.translate("$Clothing");
+      }
+      else if(kw.BYOHAdoptionToyKeyword != undefined)
+      {
+         a_entryObject.subType        = I.MISC_TOY;
+         a_entryObject.subTypeDisplay = Tr.translate("$Toy");
       }
    }
 
    function processMiscBaseId(a_entryObject)
    {
-      switch(a_entryObject.baseId)
+      var F    = skyui.defines.Form;
+      var I    = skyui.defines.Item;
+      var Tr   = skyui.util.Translator;
+      var base = a_entryObject.baseId;
+
+      // Ordered: lockpick and gold hit most frequently across a playthrough
+      if(base == F.BASEID_LOCKPICK)
       {
-         case skyui.defines.Form.BASEID_GEMAMETHYSTFLAWLESS:
-            a_entryObject.subType        = skyui.defines.Item.MISC_GEM;
-            a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Gem");
-            break;
-         case skyui.defines.Form.BASEID_RUBYDRAGONCLAW:
-         case skyui.defines.Form.BASEID_IVORYDRAGONCLAW:
-         case skyui.defines.Form.BASEID_GLASSCLAW:
-         case skyui.defines.Form.BASEID_EBONYCLAW:
-         case skyui.defines.Form.BASEID_EMERALDDRAGONCLAW:
-         case skyui.defines.Form.BASEID_DIAMONDCLAW:
-         case skyui.defines.Form.BASEID_IRONCLAW:
-         case skyui.defines.Form.BASEID_CORALDRAGONCLAW:
-         case skyui.defines.Form.BASEID_E3GOLDENCLAW:
-         case skyui.defines.Form.BASEID_SAPPHIREDRAGONCLAW:
-         case skyui.defines.Form.BASEID_MS13GOLDENCLAW:
-            a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Claw");
-            a_entryObject.subType        = skyui.defines.Item.MISC_DRAGONCLAW;
-            break;
-         case skyui.defines.Form.BASEID_LOCKPICK:
-            a_entryObject.subType        = skyui.defines.Item.MISC_LOCKPICK;
-            a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Lockpick");
-            break;
-         case skyui.defines.Form.BASEID_GOLD001:
-            a_entryObject.subType        = skyui.defines.Item.MISC_GOLD;
-            a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Gold");
-            break;
-         case skyui.defines.Form.BASEID_LEATHER01:
-            a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Leather");
-            a_entryObject.subType        = skyui.defines.Item.MISC_LEATHER;
-            break;
-         case skyui.defines.Form.BASEID_LEATHERSTRIPS:
-            a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Strips");
-            a_entryObject.subType        = skyui.defines.Item.MISC_LEATHERSTRIPS;
-         default:
-            return;
+         a_entryObject.subType        = I.MISC_LOCKPICK;
+         a_entryObject.subTypeDisplay = Tr.translate("$Lockpick");
+      }
+      else if(base == F.BASEID_GOLD001)
+      {
+         a_entryObject.subType        = I.MISC_GOLD;
+         a_entryObject.subTypeDisplay = Tr.translate("$Gold");
+      }
+      else if(base == F.BASEID_LEATHER01)
+      {
+         a_entryObject.subType        = I.MISC_LEATHER;
+         a_entryObject.subTypeDisplay = Tr.translate("$Leather");
+      }
+      else if(base == F.BASEID_LEATHERSTRIPS)
+      {
+         a_entryObject.subType        = I.MISC_LEATHERSTRIPS;
+         a_entryObject.subTypeDisplay = Tr.translate("$Strips");
+      }
+      else if(base == F.BASEID_GEMAMETHYSTFLAWLESS)
+      {
+         a_entryObject.subType        = I.MISC_GEM;
+         a_entryObject.subTypeDisplay = Tr.translate("$Gem");
+      }
+      else if(base == F.BASEID_RUBYDRAGONCLAW    || base == F.BASEID_IVORYDRAGONCLAW
+           || base == F.BASEID_GLASSCLAW         || base == F.BASEID_EBONYCLAW
+           || base == F.BASEID_EMERALDDRAGONCLAW  || base == F.BASEID_DIAMONDCLAW
+           || base == F.BASEID_IRONCLAW          || base == F.BASEID_CORALDRAGONCLAW
+           || base == F.BASEID_E3GOLDENCLAW      || base == F.BASEID_SAPPHIREDRAGONCLAW
+           || base == F.BASEID_MS13GOLDENCLAW)
+      {
+         a_entryObject.subType        = I.MISC_DRAGONCLAW;
+         a_entryObject.subTypeDisplay = Tr.translate("$Claw");
       }
    }
 }
