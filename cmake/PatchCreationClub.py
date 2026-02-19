@@ -137,7 +137,10 @@ def main():
         138: 349,  # DefineSpriteTag  (background rect sprite wrapper)
         510: 350,  # DefineEditTextTag (cScrollableText text field)
         511: 351,  # DefineSpriteTag  (cScrollableText) -> exported as "cScrollableText"
-        514: 206,  # DefineSpriteTag  (list entry) -> use SkyUI's HelpList item renderer
+        514: 251,  # DefineSpriteTag  (list entry) -> use SkyUI's SettingsCategoryList item renderer
+               #                    charId=251 has "Normal" (A=83, dim) and "Selected" (A=255, bright)
+               #                    frame labels with a plain textField child, matching the
+               #                    alpha-dimming pattern used throughout this SWF for list highlights.
         515: 355,  # DefineSpriteTag  (CreationList) -> exported as "CreationList"
         591: 356,  # DefineShapeTag   (decorative shape)
         595: 357,  # DefineSpriteTag  (CreationListPanel, 20-frame animated)
@@ -160,8 +163,10 @@ def main():
     # Character definition tags to copy from the before SWF (original IDs).
     # Note: 512, 513 (HTML textFields inside Bethesda's item renderer) and 514
     # (the item renderer itself) are NOT copied — we use SkyUI's existing
-    # HelpList item renderer (charId 206) instead, which has plain-text textFields
-    # that work correctly with BSScrollingList.SetEntryText.
+    # SettingsCategoryList item renderer (charId 251) instead.  charId 251 has
+    # "Normal" (A=83, dimmed) and "Selected" (A=255, bright) frame labels plus
+    # a plain textField child — the same alpha-dimming highlight pattern used
+    # throughout the SWF, matching Bethesda's original mechanism.
     chars_to_copy = {137, 138, 510, 511, 515, 591, 595, 596, 597, 598, 668}
     def_id_attribs = ('shapeId', 'spriteId', 'characterID')
 
