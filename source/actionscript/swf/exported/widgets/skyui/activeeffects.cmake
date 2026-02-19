@@ -2,6 +2,7 @@
 # Auto-generated from SWF decompilation
 
 set(exported_widgets_skyui_activeeffects_SOURCES
+    ${AS_SOURCE_DIR}/CLIK/gfx/events/EventDispatcher.as
     ${AS_SOURCE_DIR}/Common/Shared/GlobalFunc.as
     ${AS_SOURCE_DIR}/Common/skyui/defines/Actor.as
     ${AS_SOURCE_DIR}/Common/skyui/defines/Magic.as
