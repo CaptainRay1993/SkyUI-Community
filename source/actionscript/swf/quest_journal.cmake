@@ -23,6 +23,7 @@ set(quest_journal_SOURCES
     ${AS_SOURCE_DIR}/Common/Components/Meter.as
     ${AS_SOURCE_DIR}/Common/SaveLoadPanel.as
     ${AS_SOURCE_DIR}/Common/Shared/BSScrollingList.as
+    ${AS_SOURCE_DIR}/Common/Shared/ButtonMapping.as
     ${AS_SOURCE_DIR}/Common/Shared/ButtonTextArtHolder.as
     ${AS_SOURCE_DIR}/Common/Shared/CenteredScrollingList.as
     ${AS_SOURCE_DIR}/Common/Shared/GlobalFunc.as
@@ -46,3 +47,12 @@ set(quest_journal_SOURCES
     ${AS_SOURCE_DIR}/PauseMenu/StatsPage.as
     ${AS_SOURCE_DIR}/PauseMenu/SystemPage.as
 )
+
+set(quest_journal_FRAME_SOURCES
+    ${AS_SOURCE_DIR}/PauseMenu/CreationList.as
+    ${AS_SOURCE_DIR}/PauseMenu/cScrollableText.as
+)
+
+set(quest_journal_PATCH_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/cmake/PatchCreationClub.py")
+set(quest_journal_PATCH_BEFORE_SWF "${CMAKE_CURRENT_SOURCE_DIR}/originalswf/beforepath/quest_journal.swf")
+
