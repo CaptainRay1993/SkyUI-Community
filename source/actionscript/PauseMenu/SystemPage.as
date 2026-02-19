@@ -426,7 +426,7 @@ class SystemPage extends MovieClip
             gfx.io.GameDelegate.call("PlaySound",["UIMenuCancel"]);
             this.EndState();
             this.StartState(SystemPage.CREATIONS_LIST_STATE);
-            this.CreationListPanel.bCloseToMainState = false;
+            this.CreationListPanel.bCloseToMainState = true;
             break;
          case SystemPage.HELP_TEXT_STATE:
             gfx.io.GameDelegate.call("PlaySound",["UIMenuCancel"]);
@@ -520,8 +520,19 @@ class SystemPage extends MovieClip
                gfx.io.GameDelegate.call("LOAD",[this.SaveLoadListHolder.List_mc.entryList,this.SaveLoadListHolder.batchSize]);
                return;
             case 3:
-               this.StartState(SystemPage.CREATIONS_LIST_STATE);
-               gfx.io.GameDelegate.call("PlaySound",["UIMenuOK"]);
+               if(this.CreationsList.entryList.length == 0)
+               {
+                  gfx.io.GameDelegate.call("PopulateCreationClubTopics",[this.CreationsList.entryList]);
+                  this.CreationsList.entryList.sort(this.doABCSort);
+                  this.CreationsList.InvalidateData();
+               }
+               if(this.CreationsList.entryList.length != 0)
+               {
+                  this.StartState(SystemPage.CREATIONS_LIST_STATE);
+                  gfx.io.GameDelegate.call("PlaySound",["UIMenuOK"]);
+                  return;
+               }
+               gfx.io.GameDelegate.call("PlaySound",["UIMenuCancel"]);
                return;
             case 4:
                gfx.io.GameDelegate.call("ModManager",[]);
@@ -1136,6 +1147,8 @@ class SystemPage extends MovieClip
    {
       this.BottomBar_mc.SetPlatform(a_platform,a_bPS3Switch);
       this.CategoryList.SetPlatform(a_platform,a_bPS3Switch);
+      this.HelpButtonHolder.SetPlatform(a_platform,a_bPS3Switch);
+      this.CreationsButtonHolder.SetPlatform(a_platform,a_bPS3Switch);
       if(a_platform != 0)
       {
          this.SettingsList.selectedIndex = 0;
