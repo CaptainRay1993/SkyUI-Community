@@ -106,7 +106,7 @@ if(FFDEC_CLI)
 				add_custom_target("AS_${VAR_PREFIX}"
 					${_ASSEMBLE_COMMAND}
 					COMMAND "${PYTHON_EXECUTABLE}" "${${VAR_PREFIX}_PATCH_SCRIPT}"
-						"${SWF_INPUT}" "${${VAR_PREFIX}_PATCH_BEFORE_SWF}"
+						"${SWF_INPUT}" "${${VAR_PREFIX}_PATCH_CC_SWF}"
 						"${_PATCHED_SWF}" "${FFDEC_CLI}"
 					COMMAND "${FFDEC_CLI}" -importScript "${_PATCHED_SWF}" "${SWF_OUT}" "${AS_STAGING}"
 					COMMENT "Patching and importing ActionScript into ${SWF_REL}"

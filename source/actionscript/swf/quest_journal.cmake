@@ -23,6 +23,6 @@ set(quest_journal_FRAME_SOURCES
     ${AS_SOURCE_DIR}/PauseMenu/cScrollableText.as
 )
 
-set(quest_journal_PATCH_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/cmake/PatchCreationClub.py")
-set(quest_journal_PATCH_BEFORE_SWF "${CMAKE_CURRENT_SOURCE_DIR}/originalswf/beforepath/quest_journal.swf")
+set(quest_journal_PATCH_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/cmake/PatchCreations.py")
+set(quest_journal_PATCH_CC_SWF "${CMAKE_CURRENT_SOURCE_DIR}/cmake/PatchCreations.swf")
 

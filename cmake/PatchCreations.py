@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """
-PatchCreationClub.py - Merge Creation Club (Installed Content) visual sprites
+PatchCreations.py - Merge Creations (Installed Content) visual sprites
 from a reference SWF into SkyUI's quest_journal.swf.
 
 Usage:
-  python PatchCreationClub.py <input_swf> <before_swf> <output_swf> <ffdec_cli>
+  python PatchCreations.py <input_swf> <cc_swf> <output_swf> <ffdec_cli>
 
-The <before_swf> is the vanilla Bethesda quest_journal.swf that contains
-the Creation Club panels (CreationListPanel, CreationTextPanel).
+The <cc_swf> is PatchCreations.swf, the vanilla Bethesda quest_journal.swf
+that contains the Creation Club panels (CreationListPanel, CreationTextPanel).
 """
 
 import sys
@@ -39,15 +39,9 @@ def remap_id_attrib(elem, attr, remap):
 
 def remap_element(elem, id_remap, font_remap):
     """Recursively remap character ID and font ID references in an element."""
-    # Definition attributes (the ID of the character being defined)
-    for attr in ('shapeId', 'spriteId', 'characterID'):
+    for attr in ('shapeId', 'spriteId', 'characterID', 'characterId'):
         remap_id_attrib(elem, attr, id_remap)
-    # Reference attributes (references to other characters, e.g. PlaceObject2)
-    for attr in ('characterId',):
-        remap_id_attrib(elem, attr, id_remap)
-    # Font reference attributes
-    for attr in ('fontId',):
-        remap_id_attrib(elem, attr, font_remap)
+    remap_id_attrib(elem, 'fontId', font_remap)
     for child in elem:
         remap_element(child, id_remap, font_remap)
 
@@ -92,22 +86,20 @@ def make_export_assets(char_id, name):
     el.set('type', 'ExportAssetsTag')
     el.set('forceWriteAsLong', 'true')
     tags_el = ET.SubElement(el, 'tags')
-    tag_item = ET.SubElement(tags_el, 'item')
-    tag_item.text = str(char_id)
+    ET.SubElement(tags_el, 'item').text = str(char_id)
     names_el = ET.SubElement(el, 'names')
-    name_item = ET.SubElement(names_el, 'item')
-    name_item.text = name
+    ET.SubElement(names_el, 'item').text = name
     return el
 
 
 def main():
     if len(sys.argv) < 5:
-        print(f"Usage: {sys.argv[0]} <input_swf> <before_swf> <output_swf> <ffdec_cli>",
+        print(f"Usage: {sys.argv[0]} <input_swf> <cc_swf> <output_swf> <ffdec_cli>",
               file=sys.stderr)
         sys.exit(1)
 
     input_swf = sys.argv[1]
-    before_swf = sys.argv[2]
+    cc_swf = sys.argv[2]
     output_swf = sys.argv[3]
     ffdec = sys.argv[4]
 
@@ -118,7 +110,7 @@ def main():
 
     print("Converting SWFs to XML...")
     run_ffdec(ffdec, ["-swf2xml", input_swf, input_xml])
-    run_ffdec(ffdec, ["-swf2xml", before_swf, before_xml])
+    run_ffdec(ffdec, ["-swf2xml", cc_swf, before_xml])
 
     input_tree = ET.parse(input_xml)
     before_tree = ET.parse(before_xml)
@@ -149,40 +141,31 @@ def main():
         596: 272,  # DefineEditTextTag (TitleText)
     }
 
-    # Font ID remapping: before font IDs -> SkyUI's _sans font (ID 204)
+    # Font ID remapping: before font IDs -> SkyUI's font IDs
     # The actual game fonts ($EverywhereFont, etc.) are provided by Skyrim at runtime
     font_remap = {
         509: 197,  # $EverywhereFont
         438: 121,  # $EverywhereMediumFont
     }
 
-    # Character definition tags to copy from the before SWF (original IDs).
-    # Note: 512, 513 (HTML textFields inside Bethesda's item renderer) and 514
-    # (the item renderer itself) are NOT copied — we use SkyUI's existing
-    # SettingsCategoryList item renderer (charId 251) instead.  charId 251 has
-    # "Normal" (A=83, dimmed) and "Selected" (A=255, bright) frame labels plus
-    # a plain textField child — the same alpha-dimming highlight pattern used
-    # throughout the SWF, matching Bethesda's original mechanism.
+    # Character definition tags to copy from the before SWF.
+    # 512, 513 (HTML textFields) and 514 (item renderer) are NOT copied —
+    # we reuse SkyUI's SettingsCategoryList item renderer (charId 206) instead.
     chars_to_copy = {510, 511, 515, 595, 597, 598}
-    def_id_attribs = ('shapeId', 'spriteId', 'characterID')
 
-    # DoInitActionTag sprite IDs to copy from the before SWF:
-    #   511 -> 351  Object.registerClass("cScrollableText", gfx.controls.TextArea)
-    #   515 -> 355  Object.registerClass("CreationList", Shared.BSScrollingList)
-    # ffdec importScript will update these with our compiled ActionScript source.
+    # DoInitActionTag sprite IDs to copy: these register AS2 classes for
+    # cScrollableText and CreationList. ffdec importScript will update these
+    # with our compiled ActionScript source.
     init_actions_to_copy = {511, 515}
 
-    # Collect tags to copy from before.xml, split by type:
-    #   char_tags     - character definition tags (DefineSprite, DefineShape, DefineEditText, etc.)
-    #   init_action_tags - DoInitActionTag entries for class registration
-    # They must be inserted at different points: char_tags before the __Packages section,
-    # init_action_tags AFTER all existing DoInitActionTags (so Shared.* classes are defined
-    # before Object.registerClass("CreationList", Shared.BSScrollingList) runs).
+    # Collect tags to copy from before.xml.
+    # char_tags are inserted before the __Packages section.
+    # init_action_tags are inserted AFTER all existing DoInitActionTags so that
+    # Shared.* classes are defined before Object.registerClass runs.
     char_tags = []
     init_action_tags = []
     for item in before_tags:
         if item.get('type') == 'DoInitActionTag':
-            # Selectively copy DoInitActionTag entries needed for class registration
             sid = item.get('spriteId')
             if sid is not None:
                 try:
@@ -193,7 +176,7 @@ def main():
                 except ValueError:
                     pass
             continue
-        for attr in def_id_attribs:
+        for attr in ('shapeId', 'spriteId', 'characterID'):
             val = item.get(attr)
             if val is not None:
                 try:
@@ -209,7 +192,6 @@ def main():
           f"from before SWF...")
 
     # Find insertion point for char defs: before the first __Packages ExportAssetsTag
-    # (which marks the start of the AS2 class definitions section)
     items = list(input_tags)
     insert_idx = len(items)
     for i, item in enumerate(items):
@@ -223,22 +205,16 @@ def main():
             if insert_idx != len(items):
                 break
 
-    # Insert new character definition tags before the __Packages section
     for j, new_item in enumerate(char_tags):
         input_tags.insert(insert_idx + j, new_item)
 
-    # Insert ExportAssetsTag entries immediately after the character definitions:
-    #   "cScrollableText" and "CreationList" are sprite-level exports (matched by name at root)
-    #   "__Packages.Shared.ButtonMapping" is a class-level export (matched by __Packages path)
     export_offset = insert_idx + len(char_tags)
     input_tags.insert(export_offset,     make_export_assets(351, 'cScrollableText'))
     input_tags.insert(export_offset + 1, make_export_assets(355, 'CreationList'))
 
     print("Added ExportAssets for cScrollableText (351), CreationList (355)")
 
-    # Insert DoInitActions AFTER the last existing DoInitActionTag.
-    # This ensures Shared.BSScrollingList (and other __Packages classes) are already defined
-    # when Object.registerClass("CreationList", Shared.BSScrollingList) runs.
+    # Insert DoInitActions after the last existing DoInitActionTag
     items = list(input_tags)  # refresh after previous insertions
     last_init_idx = 0
     for i, item in enumerate(items):
@@ -247,8 +223,7 @@ def main():
     for j, new_item in enumerate(init_action_tags):
         input_tags.insert(last_init_idx + 1 + j, new_item)
 
-    print(f"Inserted {len(init_action_tags)} DoInitAction tags after position {last_init_idx} "
-          f"(after all existing __Packages DoInitActions)...")
+    print(f"Inserted {len(init_action_tags)} DoInitAction tags after position {last_init_idx}...")
 
     # Add PlaceObject2 entries to SystemPage sprite (spriteId=275)
     system_page = None
@@ -265,13 +240,12 @@ def main():
     if subtags is None:
         subtags = ET.SubElement(system_page, 'subTags')
 
-    # Insert before ShowFrameTag (so panels appear on frame 1)
+    # Insert before ShowFrameTag so panels appear on frame 1
     subtag_list = list(subtags)
-    sp_insert = len(subtag_list)
-    for i, sub in enumerate(subtag_list):
-        if sub.get('type') == 'ShowFrameTag':
-            sp_insert = i
-            break
+    sp_insert = next(
+        (i for i, s in enumerate(subtag_list) if s.get('type') == 'ShowFrameTag'),
+        len(subtag_list)
+    )
 
     subtags.insert(sp_insert,
         make_place_object2(357, 101, 'CreationListPanel', 5690, 1516))
@@ -281,11 +255,10 @@ def main():
     print("Added CreationListPanel (357, depth=101) and CreationTextPanel (360, depth=102) "
           "to SystemPage (spriteId=275)...")
 
-    # Write output XML
+    # Write output XML and convert to SWF
     ET.indent(input_tree, space='  ')
     input_tree.write(output_xml, encoding='UTF-8', xml_declaration=True)
 
-    # Convert XML back to SWF
     print(f"Converting XML to SWF -> {output_swf}...")
     os.makedirs(os.path.dirname(os.path.abspath(output_swf)), exist_ok=True)
     run_ffdec(ffdec, ["-xml2swf", output_xml, output_swf])
