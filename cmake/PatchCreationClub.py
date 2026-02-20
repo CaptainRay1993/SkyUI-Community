@@ -152,8 +152,8 @@ def main():
     # Font ID remapping: before font IDs -> SkyUI's _sans font (ID 204)
     # The actual game fonts ($EverywhereFont, etc.) are provided by Skyrim at runtime
     font_remap = {
-        509: 204,  # $EverywhereFont
-        438: 204,  # $EverywhereMediumFont
+        509: 197,  # $EverywhereFont
+        438: 121,  # $EverywhereMediumFont
     }
 
     # Character definition tags to copy from the before SWF (original IDs).
