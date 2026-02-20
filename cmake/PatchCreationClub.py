@@ -135,14 +135,10 @@ def main():
         # New characters (copied from before SWF, assigned new IDs)
         510: 350,  # DefineEditTextTag (cScrollableText text field)
         511: 351,  # DefineSpriteTag  (cScrollableText) -> exported as "cScrollableText"
-               #                    charId=251 has "Normal" (A=83, dim) and "Selected" (A=255, bright)
-               #                    frame labels with a plain textField child, matching the
-               #                    alpha-dimming pattern used throughout this SWF for list highlights.
         515: 355,  # DefineSpriteTag  (CreationList) -> exported as "CreationList"
         595: 357,  # DefineSpriteTag  (CreationListPanel, 20-frame animated)
         597: 359,  # DefineSpriteTag  (CreationTextPanel content)
         598: 360,  # DefineSpriteTag  (CreationTextPanel wrapper, 20-frame animated)
-        668: 361,  # DefineSpriteTag  (ButtonMapping 0-frame class sprite)
         # Characters already in SkyUI (remap references to SkyUI's versions)
         471: 161,  # JournalScrollBar -> SkyUI's ScrollBar
         520: 202,  # ButtonArtHolder  -> SkyUI's ButtonArtHolder
@@ -167,15 +163,14 @@ def main():
     # "Normal" (A=83, dimmed) and "Selected" (A=255, bright) frame labels plus
     # a plain textField child — the same alpha-dimming highlight pattern used
     # throughout the SWF, matching Bethesda's original mechanism.
-    chars_to_copy = {510, 511, 515, 595, 597, 598, 668}
+    chars_to_copy = {510, 511, 515, 595, 597, 598}
     def_id_attribs = ('shapeId', 'spriteId', 'characterID')
 
     # DoInitActionTag sprite IDs to copy from the before SWF:
     #   511 -> 351  Object.registerClass("cScrollableText", gfx.controls.TextArea)
     #   515 -> 355  Object.registerClass("CreationList", Shared.BSScrollingList)
-    #   668 -> 361  Shared.ButtonMapping class implementation
     # ffdec importScript will update these with our compiled ActionScript source.
-    init_actions_to_copy = {511, 515, 668}
+    init_actions_to_copy = {511, 515}
 
     # Collect tags to copy from before.xml, split by type:
     #   char_tags     - character definition tags (DefineSprite, DefineShape, DefineEditText, etc.)
@@ -238,10 +233,8 @@ def main():
     export_offset = insert_idx + len(char_tags)
     input_tags.insert(export_offset,     make_export_assets(351, 'cScrollableText'))
     input_tags.insert(export_offset + 1, make_export_assets(355, 'CreationList'))
-    input_tags.insert(export_offset + 2, make_export_assets(361, '__Packages.Shared.ButtonMapping'))
 
-    print("Added ExportAssets for cScrollableText (351), CreationList (355), "
-          "and __Packages.Shared.ButtonMapping (361)...")
+    print("Added ExportAssets for cScrollableText (351), CreationList (355)")
 
     # Insert DoInitActions AFTER the last existing DoInitActionTag.
     # This ensures Shared.BSScrollingList (and other __Packages classes) are already defined
