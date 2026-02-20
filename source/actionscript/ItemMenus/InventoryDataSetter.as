@@ -538,16 +538,13 @@ class InventoryDataSetter extends ItemcardDataExtender
             a_entryObject.material = skyui.defines.Material.NORDIC;
             a_entryObject.materialDisplay = skyui.util.Translator.translate("$Nordic");
             break;
-         case skyui.defines.Form.BASEID_DRAUGRARROW:
-            a_entryObject.material = skyui.defines.Material.DRAUGR;
-            a_entryObject.materialDisplay = skyui.util.Translator.translate("$Draugr");
-            break;
          case skyui.defines.Form.BASEID_FALMERARROW:
             a_entryObject.material = skyui.defines.Material.FALMER;
             a_entryObject.materialDisplay = skyui.util.Translator.translate("$Falmer");
             break;
          case skyui.defines.Form.BASEID_STEELARROW:
          case skyui.defines.Form.BASEID_MQ101STEELARROW:
+         case skyui.defines.Form.BASEID_DRAUGRARROW:
             a_entryObject.material = skyui.defines.Material.STEEL;
             a_entryObject.materialDisplay = skyui.util.Translator.translate("$Steel");
             break;
@@ -561,10 +558,6 @@ class InventoryDataSetter extends ItemcardDataExtender
          case skyui.defines.Form.BASEID_TESTDLC1BOLT:
             a_entryObject.material = skyui.defines.Material.IRON;
             a_entryObject.materialDisplay = skyui.util.Translator.translate("$Iron");
-            break;
-         case skyui.defines.Form.BASEID_FORSWORNARROW:
-            a_entryObject.material = skyui.defines.Material.HIDE;
-            a_entryObject.materialDisplay = skyui.util.Translator.translate("$Forsworn");
             break;
          case skyui.defines.Form.BASEID_DLC2RIEKLINGSPEARTHROWN:
             a_entryObject.material = skyui.defines.Material.WOOD;
