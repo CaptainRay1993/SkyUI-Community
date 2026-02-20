@@ -840,6 +840,10 @@ class InventoryDataSetter extends ItemcardDataExtender
             a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Claw");
             a_entryObject.subType = skyui.defines.Item.MISC_DRAGONCLAW;
             break;
+         case skyui.defines.Form.BASEID_GEM1:
+         case skyui.defines.Form.BASEID_GEM2:
+         case skyui.defines.Form.BASEID_GEM3:
+         case skyui.defines.Form.BASEID_GEM4:
          case skyui.defines.Form.BASEID_DLC1GEM1:
          case skyui.defines.Form.BASEID_DLC1GEM2:
          case skyui.defines.Form.BASEID_DLC1GEM3:
@@ -853,10 +857,18 @@ class InventoryDataSetter extends ItemcardDataExtender
             a_entryObject.subType = skyui.defines.Item.MISC_GEM;
             a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Gem");
             break;
+         case skyui.defines.Form.BASEID_REMAINS1:
+         case skyui.defines.Form.BASEID_REMAINS2:
+         case skyui.defines.Form.BASEID_REMAINS3:
+         case skyui.defines.Form.BASEID_REMAINS4:
+         case skyui.defines.Form.BASEID_REMAINS5:
          case skyui.defines.Form.BASEID_DLC1REMAINS1:
          case skyui.defines.Form.BASEID_DLC1REMAINS2:
          case skyui.defines.Form.BASEID_DLC1REMAINS3:
          case skyui.defines.Form.BASEID_DLC1REMAINS4:
+         case skyui.defines.Form.BASEID_DLC1REMAINS5:
+         case skyui.defines.Form.BASEID_DLC1REMAINS6:
+         case skyui.defines.Form.BASEID_DLC1REMAINS7:
             a_entryObject.subType = skyui.defines.Item.MISC_REMAINS;
             a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Remains");
             break;
