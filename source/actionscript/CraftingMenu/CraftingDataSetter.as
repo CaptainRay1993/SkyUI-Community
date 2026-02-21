@@ -572,6 +572,7 @@ function processAmmoBaseId(a_entryObject)
          case skyui.defines.Form.BASEID_DLC1BOLTSTEELEXPLODINGFIRE:
          case skyui.defines.Form.BASEID_DLC1BOLTSTEELEXPLODINGICE:
          case skyui.defines.Form.BASEID_DLC1BOLTSTEELEXPLODINGSHOCK:
+         case skyui.defines.Form.BASEID_DUNGEIRMUNDSIGDISARROWSILLUSION:
             a_entryObject.material = skyui.defines.Material.STEEL;
             a_entryObject.materialDisplay = skyui.util.Translator.translate("$Steel");
             break;
@@ -588,7 +589,6 @@ function processAmmoBaseId(a_entryObject)
          case skyui.defines.Form.BASEID_CWARROWSHORT:
          case skyui.defines.Form.BASEID_TRAPDART:
          case skyui.defines.Form.BASEID_DUNARCHERPRATICEARROW:
-         case skyui.defines.Form.BASEID_DUNGEIRMUNDSIGDISARROWSILLUSION:
          case skyui.defines.Form.BASEID_FOLLOWERIRONARROW:
          case skyui.defines.Form.BASEID_TESTDLC1BOLT:
             a_entryObject.material = skyui.defines.Material.IRON;
@@ -597,7 +597,6 @@ function processAmmoBaseId(a_entryObject)
          case skyui.defines.Form.BASEID_DLC2RIEKLINGSPEARTHROWN:
             a_entryObject.material = skyui.defines.Material.WOOD;
             a_entryObject.materialDisplay = skyui.util.Translator.translate("$Wood");
-            a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Spear");
          default:
             return;
       }

@@ -595,7 +595,6 @@ class InventoryDataSetter extends ItemcardDataExtender
          case skyui.defines.Form.BASEID_DLC2RIEKLINGSPEARTHROWN:
             a_entryObject.material = skyui.defines.Material.WOOD;
             a_entryObject.materialDisplay = skyui.util.Translator.translate("$Wood");
-            a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Spear");
          default:
             return;
       }
