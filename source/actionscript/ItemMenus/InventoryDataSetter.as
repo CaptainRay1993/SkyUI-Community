@@ -739,15 +739,15 @@ class InventoryDataSetter extends ItemcardDataExtender
          a_entryObject.subType = skyui.defines.Item.MISC_INGOT;
          a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Ingot");
       }
+      else if(a_entryObject.keywords.VendorItemFireword != undefined)
+      {
+         a_entryObject.subType = skyui.defines.Item.MISC_FIREWOOD;
+         a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Firewood");
+      }
       else if(a_entryObject.keywords.VendorItemClutter != undefined)
       {
          a_entryObject.subType = skyui.defines.Item.MISC_CLUTTER;
          a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Clutter");
-      }
-      else if(a_entryObject.keywords.VendorItemFirewood != undefined)
-      {
-         a_entryObject.subType = skyui.defines.Item.MISC_FIREWOOD;
-         a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Firewood");
       }
    }
    function processMiscBaseId(a_entryObject)
