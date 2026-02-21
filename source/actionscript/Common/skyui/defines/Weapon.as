@@ -33,6 +33,7 @@ class skyui.defines.Weapon
    static var TYPE_STAFF = 10;
    static var TYPE_PICKAXE = 11;
    static var TYPE_WOODAXE = 12;
+   static var TYPE_FISHINGROD = 13;
    static var AMMO_ARROW = 0;
    static var AMMO_BOLT = 1;
    static var AMMOFLAG_IGNORESNORMALWEAPONRESISTANCE = 1;
