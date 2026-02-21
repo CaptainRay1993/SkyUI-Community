@@ -176,6 +176,11 @@ class InventoryDataSetter extends ItemcardDataExtender
          a_entryObject.material = skyui.defines.Material.STEEL;
          a_entryObject.materialDisplay = skyui.util.Translator.translate("$Steel");
       }
+      else if(a_entryObject.keywords.WeapMaterialSilver != undefined)
+      {
+         a_entryObject.material = skyui.defines.Material.SILVER;
+         a_entryObject.materialDisplay = skyui.util.Translator.translate("$Silver");
+      }
       else if(a_entryObject.keywords.ArmorMaterialFalmer != undefined || a_entryObject.keywords.DLC1ArmorMaterialFalmerHardened != undefined || a_entryObject.keywords.DLC1ArmorMaterielFalmerHeavy != undefined || a_entryObject.keywords.DLC1ArmorMaterielFalmerHeavyOriginal != undefined)
       {
          a_entryObject.material = skyui.defines.Material.FALMER;
