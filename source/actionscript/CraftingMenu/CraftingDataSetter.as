@@ -779,7 +779,7 @@ class CraftingDataSetter implements skyui.components.list.IListProcessor
          a_entryObject.subType = skyui.defines.Item.MISC_CLUTTER;
          a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Clutter");
       }
-      else if(a_entryObject.keywords.VendorItemFirewood != undefined)
+      else if(a_entryObject.keywords.VendorItemFireword != undefined)
       {
          a_entryObject.subType = skyui.defines.Item.MISC_FIREWOOD;
          a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Firewood");
