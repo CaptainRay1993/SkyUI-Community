@@ -518,7 +518,7 @@ class CraftingDataSetter implements skyui.components.list.IListProcessor
          a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Bolt");
       }
    }
-   function processAmmoBaseId(a_entryObject)
+function processAmmoBaseId(a_entryObject)
    {
       switch(a_entryObject.baseId)
       {
@@ -545,6 +545,10 @@ class CraftingDataSetter implements skyui.components.list.IListProcessor
          case skyui.defines.Form.BASEID_DWARVENSPHEREBOLT01:
          case skyui.defines.Form.BASEID_DWARVENSPHEREBOLT02:
          case skyui.defines.Form.BASEID_DLC2DWARVENBALLISTABOLT:
+         case skyui.defines.Form.BASEID_DLC1BOLTDWARVEN:
+         case skyui.defines.Form.BASEID_DLC1BOLTDWARVENEXPLODINGFIRE:
+         case skyui.defines.Form.BASEID_DLC1BOLTDWARVENEXPLODINGICE:
+         case skyui.defines.Form.BASEID_DLC1BOLTDWARVENEXPLODINGSHOCK:
             a_entryObject.material = skyui.defines.Material.DWARVEN;
             a_entryObject.materialDisplay = skyui.util.Translator.translate("$Dwarven");
             break;
@@ -553,12 +557,9 @@ class CraftingDataSetter implements skyui.components.list.IListProcessor
             a_entryObject.materialDisplay = skyui.util.Translator.translate("$Orcish");
             break;
          case skyui.defines.Form.BASEID_NORDHEROARROW:
+         case skyui.defines.Form.BASEID_DLC2NORDICARROW:
             a_entryObject.material = skyui.defines.Material.NORDIC;
             a_entryObject.materialDisplay = skyui.util.Translator.translate("$Nordic");
-            break;
-         case skyui.defines.Form.BASEID_DRAUGRARROW:
-            a_entryObject.material = skyui.defines.Material.DRAUGR;
-            a_entryObject.materialDisplay = skyui.util.Translator.translate("$Draugr");
             break;
          case skyui.defines.Form.BASEID_FALMERARROW:
             a_entryObject.material = skyui.defines.Material.FALMER;
@@ -566,8 +567,21 @@ class CraftingDataSetter implements skyui.components.list.IListProcessor
             break;
          case skyui.defines.Form.BASEID_STEELARROW:
          case skyui.defines.Form.BASEID_MQ101STEELARROW:
+         case skyui.defines.Form.BASEID_DRAUGRARROW:
+         case skyui.defines.Form.BASEID_DLC1BOLTSTEEL:
+         case skyui.defines.Form.BASEID_DLC1BOLTSTEELEXPLODINGFIRE:
+         case skyui.defines.Form.BASEID_DLC1BOLTSTEELEXPLODINGICE:
+         case skyui.defines.Form.BASEID_DLC1BOLTSTEELEXPLODINGSHOCK:
             a_entryObject.material = skyui.defines.Material.STEEL;
             a_entryObject.materialDisplay = skyui.util.Translator.translate("$Steel");
+            break;
+         case skyui.defines.Form.BASEID_DLC2STALHRIMARROW:
+            a_entryObject.material = skyui.defines.Material.STALHRIM;
+            a_entryObject.materialDisplay = skyui.util.Translator.translate("$Stalhrim");
+            break;
+         case skyui.defines.Form.BASEID_DLC1DRAGONBONEARROW:
+            a_entryObject.material = skyui.defines.Material.DRAGON;
+            a_entryObject.materialDisplay = skyui.util.Translator.translate("$Dragon");
             break;
          case skyui.defines.Form.BASEID_IRONARROW:
          case skyui.defines.Form.BASEID_CWARROW:
@@ -579,10 +593,6 @@ class CraftingDataSetter implements skyui.components.list.IListProcessor
          case skyui.defines.Form.BASEID_TESTDLC1BOLT:
             a_entryObject.material = skyui.defines.Material.IRON;
             a_entryObject.materialDisplay = skyui.util.Translator.translate("$Iron");
-            break;
-         case skyui.defines.Form.BASEID_FORSWORNARROW:
-            a_entryObject.material = skyui.defines.Material.HIDE;
-            a_entryObject.materialDisplay = skyui.util.Translator.translate("$Forsworn");
             break;
          case skyui.defines.Form.BASEID_DLC2RIEKLINGSPEARTHROWN:
             a_entryObject.material = skyui.defines.Material.WOOD;
