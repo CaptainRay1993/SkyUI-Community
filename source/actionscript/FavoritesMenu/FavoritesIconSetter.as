@@ -5,18 +5,20 @@ class FavoritesIconSetter implements skyui.components.list.IListProcessor
    }
    function processList(a_list)
    {
-      var _loc3_ = a_list.entryList;
-      var _loc2_ = 0;
-      while(_loc2_ < _loc3_.length)
+      var _loc4_ = a_list.entryList;
+      var _loc3_ = 0;
+      var _loc2_;
+      while(_loc3_ < _loc4_.length)
       {
-         this.processEntry(_loc3_[_loc2_]);
-         _loc2_ = _loc2_ + 1;
+         _loc2_ = _loc4_[_loc3_];
+         this.fixSKSEExtendedObject(_loc2_);
+         this.processEntry(_loc2_);
+         _loc3_ = _loc3_ + 1;
       }
    }
    function processEntry(a_entryObject)
    {
       a_entryObject.baseId = a_entryObject.formId & 0xFFFFFF;
-      this.fixSKSEExtendedObject(a_entryObject);
       switch(a_entryObject.formType)
       {
          case skyui.defines.Form.TYPE_SCROLLITEM:
