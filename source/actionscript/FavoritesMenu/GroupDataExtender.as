@@ -156,18 +156,19 @@ class GroupDataExtender implements skyui.components.list.IListProcessor
       var _loc3_ = this.iconData[_loc2_];
       var _loc4_;
       var _loc5_;
-      if(_loc3_)
+      if(!_loc3_)
       {
-         var _loc6_ = this._itemIdMap[_loc3_];
-         if(_loc6_ != null)
-         {
-            _loc4_ = _loc6_.iconLabel;
-            _loc5_ = _loc6_.iconColor;
-         }
-         else
-         {
-            this.reportInvalidItem(_loc3_);
-         }
+         return undefined;
+      }
+      var _loc6_ = this._itemIdMap[_loc3_];
+      if(_loc6_ != null)
+      {
+         _loc4_ = _loc6_.iconLabel;
+         _loc5_ = _loc6_.iconColor;
+      }
+      else
+      {
+         this.reportInvalidItem(_loc3_);
       }
       a_icon._visible = true;
       a_icon.gotoAndStop(_loc4_ == undefined ? "default_misc" : _loc4_);
