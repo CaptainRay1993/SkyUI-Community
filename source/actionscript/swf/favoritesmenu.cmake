@@ -6,7 +6,10 @@ set(favoritesmenu_SOURCES
     ${AS_SOURCE_DIR}/Common/skyui/defines/Armor.as
     ${AS_SOURCE_DIR}/Common/skyui/defines/Form.as
     ${AS_SOURCE_DIR}/Common/skyui/defines/Input.as
+    ${AS_SOURCE_DIR}/Common/skyui/defines/Inventory.as
     ${AS_SOURCE_DIR}/Common/skyui/defines/Item.as
+    ${AS_SOURCE_DIR}/Common/skyui/defines/Magic.as
+    ${AS_SOURCE_DIR}/Common/skyui/defines/Material.as
     ${AS_SOURCE_DIR}/Common/skyui/defines/Weapon.as
     ${AS_SOURCE_DIR}/FavoritesMenu/FavoritesIconSetter.as
     ${AS_SOURCE_DIR}/FavoritesMenu/FavoritesListEntry.as
