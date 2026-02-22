@@ -345,11 +345,15 @@ class CraftingDataSetter implements skyui.components.list.IListProcessor
    }
    function processWeaponBaseId(a_entryObject)
    {
-      switch(a_entryObject.baseId)
+      var _loc_id = (a_entryObject.formId >>> 24) <= 0x04 ? a_entryObject.formId : a_entryObject.baseId;
+      switch(_loc_id)
       {
          case skyui.defines.Form.BASEID_WEAPPICKAXE:
          case skyui.defines.Form.BASEID_SSDROCKSPLINTERPICKAXE:
          case skyui.defines.Form.BASEID_DUNVOLUNRUUDPICKAXE:
+         case skyui.defines.Form.BASEID_DLC2PICKAXE1:
+         case skyui.defines.Form.BASEID_DLC2PICKAXE2:
+         case skyui.defines.Form.BASEID_DLC2PICKAXE3:
             a_entryObject.subType = skyui.defines.Weapon.TYPE_PICKAXE;
             a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Pickaxe");
             break;
@@ -482,7 +486,8 @@ class CraftingDataSetter implements skyui.components.list.IListProcessor
    }
    function processArmorBaseId(a_entryObject)
    {
-      switch(a_entryObject.baseId)
+      var _loc_id = (a_entryObject.formId >>> 24) <= 0x04 ? a_entryObject.formId : a_entryObject.baseId;
+      switch(_loc_id)
       {
          case skyui.defines.Form.BASEID_CLOTHESWEDDINGWREATH:
             a_entryObject.weightClass = skyui.defines.Armor.WEIGHT_JEWELRY;
@@ -491,6 +496,12 @@ class CraftingDataSetter implements skyui.components.list.IListProcessor
          case skyui.defines.Form.BASEID_DLC1CLOTHESVAMPIRELORDARMOR:
             a_entryObject.subType = skyui.defines.Armor.EQUIP_BODY;
             a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Body");
+            break;
+         case skyui.defines.Form.BASEID_CC025ADVDSGSRING:
+            a_entryObject.weightClass = skyui.defines.Armor.WEIGHT_JEWELRY;
+            a_entryObject.weightClassDisplay = skyui.util.Translator.translate("$Jewelry");
+            a_entryObject.subType = skyui.defines.Armor.EQUIP_RING;
+            a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Ring");
          default:
             return;
       }
@@ -535,7 +546,8 @@ class CraftingDataSetter implements skyui.components.list.IListProcessor
    }
    function processAmmoBaseId(a_entryObject)
    {
-      switch(a_entryObject.baseId)
+      var _loc_id = (a_entryObject.formId >>> 24) <= 0x04 ? a_entryObject.formId : a_entryObject.baseId;
+      switch(_loc_id)
       {
          case skyui.defines.Form.BASEID_DAEDRICARROW:
             a_entryObject.material = skyui.defines.Material.DAEDRIC;
@@ -740,6 +752,11 @@ class CraftingDataSetter implements skyui.components.list.IListProcessor
          case skyui.defines.Form.BASEID_DA01SOULGEMBLACKSTAR:
          case skyui.defines.Form.BASEID_DA01SOULGEMAZURASSTAR:
             a_entryObject.subType = skyui.defines.Item.SOULGEM_AZURA;
+            return;
+         case skyui.defines.Form.BASEID_CC025SOULTOMATO1:
+         case skyui.defines.Form.BASEID_CC025SOULTOMATO2:
+            a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$SoulTomato");
+            return;
          default:
             return;
       }
@@ -811,7 +828,8 @@ class CraftingDataSetter implements skyui.components.list.IListProcessor
    }
    function processMiscBaseId(a_entryObject)
    {
-      switch(a_entryObject.baseId)
+      var _loc_id = (a_entryObject.formId >>> 24) <= 0x04 ? a_entryObject.formId : a_entryObject.baseId;
+      switch(_loc_id)
       {
          case skyui.defines.Form.BASEID_GEMAMETHYSTFLAWLESS:
             a_entryObject.subType = skyui.defines.Item.MISC_GEM;
@@ -866,6 +884,8 @@ class CraftingDataSetter implements skyui.components.list.IListProcessor
          case skyui.defines.Form.BASEID_DLC1REMAINS5:
          case skyui.defines.Form.BASEID_DLC1REMAINS6:
          case skyui.defines.Form.BASEID_DLC1REMAINS7:
+         case skyui.defines.Form.BASEID_CC019STAFFREMAINS:
+         case skyui.defines.Form.BASEID_CC036PETWOLFREMAINS:
             a_entryObject.subType = skyui.defines.Item.MISC_REMAINS;
             a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Remains");
             break;
@@ -878,6 +898,7 @@ class CraftingDataSetter implements skyui.components.list.IListProcessor
             a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Lockpick");
             break;
          case skyui.defines.Form.BASEID_GOLD001:
+         case skyui.defines.Form.BASEID_CCKRTALTARGOLD:
             a_entryObject.subType = skyui.defines.Item.MISC_GOLD;
             a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Gold");
             break;

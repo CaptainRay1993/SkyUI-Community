@@ -337,7 +337,8 @@ class InventoryDataSetter extends ItemcardDataExtender
    }
    function processWeaponBaseId(a_entryObject)
    {
-      switch(a_entryObject.baseId)
+      var _loc_id = (a_entryObject.formId >>> 24) <= 0x04 ? a_entryObject.formId : a_entryObject.baseId;
+      switch(_loc_id)
       {
          case skyui.defines.Form.BASEID_WEAPPICKAXE:
          case skyui.defines.Form.BASEID_SSDROCKSPLINTERPICKAXE:
@@ -482,7 +483,8 @@ class InventoryDataSetter extends ItemcardDataExtender
    }
    function processArmorBaseId(a_entryObject)
    {
-      switch(a_entryObject.baseId)
+      var _loc_id = (a_entryObject.formId >>> 24) <= 0x04 ? a_entryObject.formId : a_entryObject.baseId;
+      switch(_loc_id)
       {
          case skyui.defines.Form.BASEID_CLOTHESWEDDINGWREATH:
             a_entryObject.weightClass = skyui.defines.Armor.WEIGHT_JEWELRY;
@@ -541,7 +543,8 @@ class InventoryDataSetter extends ItemcardDataExtender
    }
    function processAmmoBaseId(a_entryObject)
    {
-      switch(a_entryObject.baseId)
+      var _loc_id = (a_entryObject.formId >>> 24) <= 0x04 ? a_entryObject.formId : a_entryObject.baseId;
+      switch(_loc_id)
       {
          case skyui.defines.Form.BASEID_DAEDRICARROW:
             a_entryObject.material = skyui.defines.Material.DAEDRIC;
@@ -795,7 +798,8 @@ class InventoryDataSetter extends ItemcardDataExtender
    }
    function processMiscBaseId(a_entryObject)
    {
-      switch(a_entryObject.baseId)
+      var _loc_id = (a_entryObject.formId >>> 24) <= 0x04 ? a_entryObject.formId : a_entryObject.baseId;
+      switch(_loc_id)
       {
          case skyui.defines.Form.BASEID_GEMAMETHYSTFLAWLESS:
             a_entryObject.subType = skyui.defines.Item.MISC_GEM;
@@ -850,6 +854,8 @@ class InventoryDataSetter extends ItemcardDataExtender
          case skyui.defines.Form.BASEID_DLC1REMAINS5:
          case skyui.defines.Form.BASEID_DLC1REMAINS6:
          case skyui.defines.Form.BASEID_DLC1REMAINS7:
+         case skyui.defines.Form.BASEID_CC019STAFFREMAINS:
+         case skyui.defines.Form.BASEID_CC036PETWOLFREMAINS:
             a_entryObject.subType = skyui.defines.Item.MISC_REMAINS;
             a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Remains");
             break;
@@ -862,6 +868,7 @@ class InventoryDataSetter extends ItemcardDataExtender
             a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Lockpick");
             break;
          case skyui.defines.Form.BASEID_GOLD001:
+         case skyui.defines.Form.BASEID_CCKRTALTARGOLD:
             a_entryObject.subType = skyui.defines.Item.MISC_GOLD;
             a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Gold");
             break;
@@ -1075,7 +1082,8 @@ class InventoryDataSetter extends ItemcardDataExtender
    }
    function processBookBaseId(a_entryObject)
    {
-      switch(a_entryObject.baseId)
+      var _loc_id = (a_entryObject.formId >>> 24) <= 0x04 ? a_entryObject.formId : a_entryObject.baseId;
+      switch(_loc_id)
       {
          case skyui.defines.Form.BASEID_BOOKMAP1:
          case skyui.defines.Form.BASEID_BOOKMAP2:
@@ -1116,7 +1124,8 @@ class InventoryDataSetter extends ItemcardDataExtender
    }
    function processScrollBaseId(a_entryObject)
    {
-      switch(a_entryObject.baseId)
+      var _loc_id = (a_entryObject.formId >>> 24) <= 0x04 ? a_entryObject.formId : a_entryObject.baseId;
+      switch(_loc_id)
       {
          case skyui.defines.Form.BASEID_DLC2SCROLLSPIDER1:
          case skyui.defines.Form.BASEID_DLC2SCROLLSPIDER2:
