@@ -817,6 +817,8 @@ class CraftingDataSetter implements skyui.components.list.IListProcessor
             a_entryObject.subType = skyui.defines.Item.MISC_GEM;
             a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Gem");
             break;
+         case skyui.defines.Form.BASEID_DLC2DRAGONCLAW1:
+         case skyui.defines.Form.BASEID_DLC2DRAGONCLAW2:
          case skyui.defines.Form.BASEID_RUBYDRAGONCLAW:
          case skyui.defines.Form.BASEID_IVORYDRAGONCLAW:
          case skyui.defines.Form.BASEID_GLASSCLAW:
@@ -830,6 +832,46 @@ class CraftingDataSetter implements skyui.components.list.IListProcessor
          case skyui.defines.Form.BASEID_MS13GOLDENCLAW:
             a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Claw");
             a_entryObject.subType = skyui.defines.Item.MISC_DRAGONCLAW;
+            break;
+         case skyui.defines.Form.BASEID_GEM1:
+         case skyui.defines.Form.BASEID_GEM2:
+         case skyui.defines.Form.BASEID_GEM3:
+         case skyui.defines.Form.BASEID_GEM4:
+         case skyui.defines.Form.BASEID_DLC1GEM1:
+         case skyui.defines.Form.BASEID_DLC1GEM2:
+         case skyui.defines.Form.BASEID_DLC1GEM3:
+         case skyui.defines.Form.BASEID_DLC1GEM4:
+         case skyui.defines.Form.BASEID_DLC1GEM5:
+         case skyui.defines.Form.BASEID_DLC2GEM1:
+         case skyui.defines.Form.BASEID_DLC2GEM2:
+         case skyui.defines.Form.BASEID_DLC2GEM3:
+         case skyui.defines.Form.BASEID_DLC2GEM4:
+         case skyui.defines.Form.BASEID_DLC2GEM5:
+         case skyui.defines.Form.BASEID_CCALMSIVIGEM1:
+         case skyui.defines.Form.BASEID_CCALMSIVIGEM2:
+         case skyui.defines.Form.BASEID_CCALMSIVIGEM3:
+         case skyui.defines.Form.BASEID_CCALMSIVIGEM4:
+            a_entryObject.subType = skyui.defines.Item.MISC_GEM;
+            a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Gem");
+            break;
+         case skyui.defines.Form.BASEID_REMAINS1:
+         case skyui.defines.Form.BASEID_REMAINS2:
+         case skyui.defines.Form.BASEID_REMAINS3:
+         case skyui.defines.Form.BASEID_REMAINS4:
+         case skyui.defines.Form.BASEID_REMAINS5:
+         case skyui.defines.Form.BASEID_DLC1REMAINS1:
+         case skyui.defines.Form.BASEID_DLC1REMAINS2:
+         case skyui.defines.Form.BASEID_DLC1REMAINS3:
+         case skyui.defines.Form.BASEID_DLC1REMAINS4:
+         case skyui.defines.Form.BASEID_DLC1REMAINS5:
+         case skyui.defines.Form.BASEID_DLC1REMAINS6:
+         case skyui.defines.Form.BASEID_DLC1REMAINS7:
+            a_entryObject.subType = skyui.defines.Item.MISC_REMAINS;
+            a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Remains");
+            break;
+         case skyui.defines.Form.BASEID_DLC2TROLLSKULL:
+            a_entryObject.subType = skyui.defines.Item.MISC_TROLLSKULL;
+            a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Remains");
             break;
          case skyui.defines.Form.BASEID_LOCKPICK:
             a_entryObject.subType = skyui.defines.Item.MISC_LOCKPICK;
@@ -846,6 +888,204 @@ class CraftingDataSetter implements skyui.components.list.IListProcessor
          case skyui.defines.Form.BASEID_LEATHERSTRIPS:
             a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Strips");
             a_entryObject.subType = skyui.defines.Item.MISC_LEATHERSTRIPS;
+            break;
+         case 0x3AD57:
+         case 0x195AA:
+         case 0x2B04E:
+            a_entryObject.subType = skyui.defines.Item.MISC_NETCHLEATHER;
+            a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$NetchLeather");
+            break;
+         case 0x3043:
+         case 0x3035:
+         case 0x5A69:
+         case 0x3011:
+         case 0x303F:
+         case 0x3012:
+         case 0x300E:
+         case 0x300F:
+         case 0x306C:
+         case 0x5A68:
+            a_entryObject.subType = skyui.defines.Item.MISC_HOUSEPART;
+            a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$BuildingMaterial");
+            break;
+         case 0xE72AA:
+         case 0xE72AC:
+         case 0xE72B0:
+         case 0xE72AE:
+         case 0xE72A6:
+         case 0xE72A8:
+         case 0xE72A0:
+         case 0xE729E:
+         case 0xE729A:
+         case 0xE729C:
+         case 0xE7296:
+         case 0xE7298:
+         case 0xE72A4:
+         case 0xE72A2:
+         case 0x64283:
+         case 0x64285:
+         case 0x64287:
+         case 0x64289:
+         case 0x6428B:
+         case 0x6428E:
+         case 0x64290:
+         case 0x64292:
+         case 0x64294:
+         case 0x64296:
+         case 0x64298:
+         case 0x6E806:
+         case 0xDB351:
+         case 0x240D3:
+         case 0x240D4:
+         case 0x240D5:
+         case 0x240D6:
+            a_entryObject.subType = skyui.defines.Item.MISC_BROKENWEAPON;
+            a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$BrokenWeapon");
+            break;
+         case 0x809:
+         case 0x762B7:
+         case 0x762B8:
+         case 0x762B9:
+         case 0x762BA:
+         case 0xBDB37:
+            a_entryObject.subType = skyui.defines.Item.MISC_AYLEIDCRYSTAL;
+            a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$AyleidCrystal");
+            break;
+         case 0x30C9:
+         case 0x30CA:
+         case 0x723B8:
+            a_entryObject.subType = skyui.defines.Item.MISC_HORSETACK;
+            a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$HorseTack");
+            break;
+         case 0xC886C:
+         case 0xC8878:
+         case 0xC8864:
+         case 0xC8872:
+         case 0xC8866:
+         case 0xC8874:
+         case 0xC886A:
+         case 0xAEBF1:
+         case 0xC8861:
+         case 0xC8868:
+         case 0xC886E:
+         case 0xC8870:
+         case 0x804:
+            a_entryObject.subType = skyui.defines.Item.MISC_DWARVENSCRAP;
+            a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$DwarvenScrap");
+            break;
+         case 0xDABA9:
+         case 0xDABA7:
+         case 0x105177:
+         case 0x3292F:
+         case 0x200BA:
+         case 0xDABAB:
+         case 0x200B6:
+         case 0x105109:
+         case 0xE77BB:
+         case 0xCE153:
+         case 0x8AD49:
+         case 0x67855:
+            a_entryObject.subType = skyui.defines.Item.MISC_INSTRUMENT;
+            a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Instrument");
+            break;
+         case 0xB08C7:
+         case 0xFBC3A:
+         case 0xFBC3B:
+         case 0xFBC3C:
+         case 0xFBC3D:
+         case 0x12DD3A:
+         case 0x12DD3B:
+         case 0x12DD3C:
+            a_entryObject.subType = skyui.defines.Item.MISC_BUGJAR;
+            a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$BugJar");
+            break;
+         case 0x17719:
+         case 0x1771F:
+            a_entryObject.subType = skyui.defines.Item.MISC_SCROLLSPIDER;
+            a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$ScrollSpider");
+            break;
+         case 0x1CD7C:
+            a_entryObject.subType = skyui.defines.Item.MISC_NETCHLEATHER;
+            a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$NetchLeather");
+            break;
+         case 0x60CC2:
+         case 0xBBCD5:
+         case 0x2BAAE:
+         case 0x80D:
+         case 0xE29A:
+            a_entryObject.subType = skyui.defines.Item.MISC_MAP;
+            a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Map");
+            break;
+         case 0x2C259:
+         case 0x2C25A:
+            a_entryObject.subType = skyui.defines.Item.MISC_ARTIFACT;
+            a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Artifact");
+            break;
+         case 0xC4F2E:
+         case 0x82F:
+            a_entryObject.subType = skyui.defines.Item.MISC_POTION;
+            a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Potion");
+            break;
+         case 0x2BAAB:
+            a_entryObject.subType = skyui.defines.Item.MISC_POISON;
+            a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Poison");
+            break;
+         case 0x457AB:
+         case 0xDC530:
+         case 0xDC52E:
+         case 0x13201:
+         case 0x13202:
+            a_entryObject.subType = skyui.defines.Item.MISC_SCROLL;
+            a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Scroll");
+            break;
+         case 0xF1491:
+         case 0xCE70B:
+         case 0xE4897:
+         case 0xE3CB7:
+            a_entryObject.subType = skyui.defines.Item.MISC_BOOK;
+            a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Book");
+            break;
+         case 0x1CB34:
+         case 0xDA732:
+         case 0xDA733:
+         case 0xDA734:
+         case 0xDA735:
+            a_entryObject.subType = skyui.defines.Item.MISC_RING;
+            a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Ring");
+            break;
+         case 0x1AAD6:
+         case 0x8B2:
+         case 0x8B8:
+         case 0x8B9:
+         case 0x8BA:
+         case 0x8BB:
+         case 0x8BC:
+         case 0x8BD:
+         case 0x8BE:
+         case 0x8BF:
+         case 0x8C3:
+         case 0x8C4:
+         case 0x8C5:
+            a_entryObject.subType = skyui.defines.Item.MISC_INGREDIENT;
+            a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Ingredient");
+            break;
+         case 0x5ACDB:
+         case 0x5ACDC:
+         case 0x5ACDE:
+         case 0x71CF3:
+         case 0x5ACE1:
+         case 0x5ACE0:
+         case 0x5ACDD:
+         case 0x5ACE2:
+         case 0x5B2DF:
+         case 0x5ACDF:
+         case 0x2B06B:
+         case 0x17749:
+         case 0x195A9:
+         case 0xBC6:
+         case 0xBC9:
+            a_entryObject.subType = skyui.defines.Item.MISC_ORE;
+            a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Ore");
          default:
             return;
       }

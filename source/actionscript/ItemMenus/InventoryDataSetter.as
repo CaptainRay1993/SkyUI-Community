@@ -988,6 +988,89 @@ class InventoryDataSetter extends ItemcardDataExtender
             a_entryObject.subType = skyui.defines.Item.MISC_SCROLLSPIDER;
             a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$ScrollSpider");
             break;
+         case 0x1CD7C:
+            a_entryObject.subType = skyui.defines.Item.MISC_NETCHLEATHER;
+            a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$NetchLeather");
+            break;
+         case 0x60CC2:
+         case 0xBBCD5:
+         case 0x2BAAE:
+         case 0x80D:
+         case 0xE29A:
+            a_entryObject.subType = skyui.defines.Item.MISC_MAP;
+            a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Map");
+            break;
+         case 0x2C259:
+         case 0x2C25A:
+            a_entryObject.subType = skyui.defines.Item.MISC_ARTIFACT;
+            a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Artifact");
+            break;
+         case 0xC4F2E:
+         case 0x82F:
+            a_entryObject.subType = skyui.defines.Item.MISC_POTION;
+            a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Potion");
+            break;
+         case 0x2BAAB:
+            a_entryObject.subType = skyui.defines.Item.MISC_POISON;
+            a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Poison");
+            break;
+         case 0x457AB:
+         case 0xDC530:
+         case 0xDC52E:
+         case 0x13201:
+         case 0x13202:
+            a_entryObject.subType = skyui.defines.Item.MISC_SCROLL;
+            a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Scroll");
+            break;
+         case 0xF1491:
+         case 0xCE70B:
+         case 0xE4897:
+         case 0xE3CB7:
+            a_entryObject.subType = skyui.defines.Item.MISC_BOOK;
+            a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Book");
+            break;
+         case 0x1CB34:
+         case 0xDA732:
+         case 0xDA733:
+         case 0xDA734:
+         case 0xDA735:
+            a_entryObject.subType = skyui.defines.Item.MISC_RING;
+            a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Ring");
+            break;
+         case 0x1AAD6:
+         case 0x8B2:
+         case 0x8B8:
+         case 0x8B9:
+         case 0x8BA:
+         case 0x8BB:
+         case 0x8BC:
+         case 0x8BD:
+         case 0x8BE:
+         case 0x8BF:
+         case 0x8C3:
+         case 0x8C4:
+         case 0x8C5:
+            a_entryObject.subType = skyui.defines.Item.MISC_INGREDIENT;
+            a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Ingredient");
+            break;
+         case 0x5ACDB:
+         case 0x5ACDC:
+         case 0x5ACDE:
+         case 0x71CF3:
+         case 0x5ACE1:
+         case 0x5ACE0:
+         case 0x5ACDD:
+         case 0x5ACE2:
+         case 0x5B2DF:
+         case 0x5ACDF:
+         case 0x2B06B:
+         case 0x17749:
+         case 0x195A9:
+         case 0xBC6:
+         case 0xBC9:
+            a_entryObject.subType = skyui.defines.Item.MISC_ORE;
+            a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Ore");
+            break;
          default:
             return;
       }
@@ -996,6 +1079,33 @@ class InventoryDataSetter extends ItemcardDataExtender
    {
       switch(a_entryObject.baseId)
       {
+         case 0xDDEFB:
+         case 0xEF07A:
+         case 0xF33CD:
+         case 0xF33CE:
+         case 0xF33CF:
+         case 0xF33D0:
+         case 0xF33D1:
+         case 0xF33D2:
+         case 0xF33D3:
+         case 0xF33D4:
+         case 0xF33D5:
+         case 0xF33E0:
+         case 0x1CAF2:
+         case 0x70CCA:
+         case 0x70CCB:
+         case 0x70CCC:
+         case 0x70CCD:
+         case 0x70CCE:
+         case 0x70CCF:
+         case 0x70CD0:
+         case 0x70CD1:
+         case 0x70CD2:
+         case 0x70CD3:
+         case 0x70CD4:
+         case 0x70CD5:
+            a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Map");
+            return;
          case 0x2D513:
          case 0x48782:
          case 0x126DC:
