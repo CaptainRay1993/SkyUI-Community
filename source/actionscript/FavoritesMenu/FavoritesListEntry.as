@@ -83,6 +83,7 @@ class FavoritesListEntry extends skyui.components.list.BasicListEntry
       this._iconLabel = a_entryObject.iconLabel == undefined ? "default_misc" : a_entryObject.iconLabel;
       this._iconColor = a_entryObject.iconColor;
       this.itemIcon.gotoAndStop(this._iconLabel);
+      this.changeIconColor(this.itemIcon,this._iconColor);
       this.itemIcon._alpha = !_loc10_ ? 50 : 90;
       if(a_entryObject == null)
       {

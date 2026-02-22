@@ -16,6 +16,7 @@ class FavoritesIconSetter implements skyui.components.list.IListProcessor
    function processEntry(a_entryObject)
    {
       a_entryObject.baseId = a_entryObject.formId & 0xFFFFFF;
+      this.fixSKSEExtendedObject(a_entryObject);
       switch(a_entryObject.formType)
       {
          case skyui.defines.Form.TYPE_SCROLLITEM:
@@ -1005,6 +1006,49 @@ class FavoritesIconSetter implements skyui.components.list.IListProcessor
          case skyui.defines.Actor.AV_FROSTRESIST:
             a_entryObject.iconLabel = "magic_frost";
             a_entryObject.iconColor = 2096127;
+         default:
+            return;
+      }
+   }
+   function fixSKSEExtendedObject(a_extendedObject)
+   {
+      if(a_extendedObject.formType == undefined)
+      {
+         return undefined;
+      }
+      var _loc2_;
+      switch(a_extendedObject.formType)
+      {
+         case skyui.defines.Form.TYPE_SPELL:
+         case skyui.defines.Form.TYPE_SCROLLITEM:
+         case skyui.defines.Form.TYPE_INGREDIENT:
+         case skyui.defines.Form.TYPE_POTION:
+         case skyui.defines.Form.TYPE_EFFECTSETTING:
+            if(a_extendedObject.school == undefined && a_extendedObject.subType != undefined)
+            {
+               a_extendedObject.school = a_extendedObject.subType;
+               delete a_extendedObject.subType;
+            }
+            if(a_extendedObject.resistance == undefined && a_extendedObject.magicType != undefined)
+            {
+               a_extendedObject.resistance = a_extendedObject.magicType;
+               delete a_extendedObject.magicType;
+            }
+            break;
+         case skyui.defines.Form.TYPE_WEAPON:
+            if(a_extendedObject.weaponType == undefined && a_extendedObject.subType != undefined)
+            {
+               a_extendedObject.weaponType = a_extendedObject.subType;
+               delete a_extendedObject.subType;
+            }
+            break;
+         case skyui.defines.Form.TYPE_BOOK:
+            if(a_extendedObject.flags == undefined && a_extendedObject.bookType != undefined)
+            {
+               _loc2_ = a_extendedObject.bookType;
+               a_extendedObject.bookType = (_loc2_ & 0xFF00) >>> 8;
+               a_extendedObject.flags = _loc2_ & 0xFF;
+            }
          default:
             return;
       }
