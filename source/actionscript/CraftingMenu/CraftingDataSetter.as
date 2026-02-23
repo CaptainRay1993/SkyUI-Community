@@ -278,12 +278,6 @@ class CraftingDataSetter implements skyui.components.list.IListProcessor
    {
       a_entryObject.subType = null;
       a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Weapon");
-      if(a_entryObject.keywords != undefined && a_entryObject.keywords.ccBGSSSE001_FishingPoleKW != undefined)
-      {
-         a_entryObject.subType = skyui.defines.Weapon.TYPE_FISHINGROD;
-         a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$FishingRod");
-         return;
-      }
       switch(a_entryObject.weaponType)
       {
          case skyui.defines.Weapon.ANIM_HANDTOHANDMELEE:
@@ -293,6 +287,12 @@ class CraftingDataSetter implements skyui.components.list.IListProcessor
             break;
          case skyui.defines.Weapon.ANIM_ONEHANDSWORD:
          case skyui.defines.Weapon.ANIM_1HS:
+            if(a_entryObject.keywords != undefined && a_entryObject.keywords.ccBGSSSE001_FishingPoleKW != undefined)
+            {
+               a_entryObject.subType = skyui.defines.Weapon.TYPE_FISHINGROD;
+               a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$FishingRod");
+               return;
+            }
             a_entryObject.subType = skyui.defines.Weapon.TYPE_SWORD;
             a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Sword");
             break;

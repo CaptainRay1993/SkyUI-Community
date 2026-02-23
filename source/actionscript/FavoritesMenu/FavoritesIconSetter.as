@@ -555,11 +555,6 @@ class FavoritesIconSetter implements skyui.components.list.IListProcessor
    function processWeaponType(a_entryObject)
    {
       a_entryObject.subType = null;
-      if(a_entryObject.keywords != undefined && a_entryObject.keywords.ccBGSSSE001_FishingPoleKW != undefined)
-      {
-         a_entryObject.subType = skyui.defines.Weapon.TYPE_FISHINGROD;
-         return;
-      }
       switch(a_entryObject.weaponType)
       {
          case skyui.defines.Weapon.ANIM_HANDTOHANDMELEE:
@@ -568,6 +563,11 @@ class FavoritesIconSetter implements skyui.components.list.IListProcessor
             break;
          case skyui.defines.Weapon.ANIM_ONEHANDSWORD:
          case skyui.defines.Weapon.ANIM_1HS:
+            if(a_entryObject.keywords != undefined && a_entryObject.keywords.ccBGSSSE001_FishingPoleKW != undefined)
+            {
+               a_entryObject.subType = skyui.defines.Weapon.TYPE_FISHINGROD;
+               return;
+            }
             a_entryObject.subType = skyui.defines.Weapon.TYPE_SWORD;
             break;
          case skyui.defines.Weapon.ANIM_ONEHANDDAGGER:
