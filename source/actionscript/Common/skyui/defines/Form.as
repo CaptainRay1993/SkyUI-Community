@@ -257,7 +257,7 @@ class skyui.defines.Form
    static var FORMID_DLC2SCROLLSPIDERMISC1 = 0x04017719;
    static var FORMID_DLC2SCROLLSPIDERMISC2 = 0x0401771F;
    static var FORMID_DLC2TROLLSKULL = 0x040247F9;
-
+   
    // Base IDs — used in switch(baseId) where baseId = formId & 0xFFFFFF.
    // ccBGSSSE001-Fish.esm / ccTWBSSE001-PuzzleDungeon.esm
    static var BASEID_CC001DWESCRAP = 0x804;
@@ -310,13 +310,6 @@ class skyui.defines.Form
    static var BASEID_CCALMSIVIGEM3 = 0x990F1;
    static var BASEID_CCALMSIVIGEM4 = 0x990F2;
    static var BASEID_CCALMSIVIPOTION = 0x82F;
-   // BSHeartland.esm
-   static var BASEID_HEARTLANDAYLEIDCRYSTALPOTION1 = 0xAF476;
-   static var BASEID_HEARTLANDAYLEIDCRYSTALPOTION2 = 0xAF477;
-   static var BASEID_HEARTLANDHORSETACK = 0x723B8;
-   static var BASEID_HEARTLANDINSTRUMENT1 = 0xCE153;
-   static var BASEID_HEARTLANDINSTRUMENT2 = 0x8AD49;
-   static var BASEID_HEARTLANDINSTRUMENT3 = 0x67855;
 
    // ESL IDs — used in switch(eslId) where eslId = formId & 0xFFF, under case 0xFE.
    // ccBGSSSE019-StaffofSheogorath.esl

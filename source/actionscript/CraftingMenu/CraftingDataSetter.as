@@ -1184,19 +1184,9 @@ class CraftingDataSetter implements skyui.components.list.IListProcessor
                   a_entryObject.subType = skyui.defines.Item.MISC_AYLEIDCRYSTAL;
                   a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$AyleidCrystal");
                   break;
-               case skyui.defines.Form.BASEID_HEARTLANDHORSETACK:
-                  a_entryObject.subType = skyui.defines.Item.MISC_HORSETACK;
-                  a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$HorseTack");
-                  break;
                case skyui.defines.Form.BASEID_CC001DWESCRAP:
                   a_entryObject.subType = skyui.defines.Item.MISC_DWARVENSCRAP;
                   a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$DwarvenScrap");
-                  break;
-               case skyui.defines.Form.BASEID_HEARTLANDINSTRUMENT1:
-               case skyui.defines.Form.BASEID_HEARTLANDINSTRUMENT2:
-               case skyui.defines.Form.BASEID_HEARTLANDINSTRUMENT3:
-                  a_entryObject.subType = skyui.defines.Item.MISC_INSTRUMENT;
-                  a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Instrument");
                   break;
                case skyui.defines.Form.BASEID_CC025BUGJAR1:
                case skyui.defines.Form.BASEID_CC025BUGJAR2:
