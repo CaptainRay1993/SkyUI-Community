@@ -11,6 +11,9 @@ set(bartermenu_SOURCES
     ${AS_SOURCE_DIR}/Common/skyui/defines/Magic.as
     ${AS_SOURCE_DIR}/Common/skyui/defines/Material.as
     ${AS_SOURCE_DIR}/Common/skyui/defines/Weapon.as
+    ${AS_SOURCE_DIR}/Common/skyui/filter/ItemTypeFilter.as
+    ${AS_SOURCE_DIR}/Common/skyui/filter/NameFilter.as
+    ${AS_SOURCE_DIR}/Common/skyui/filter/SortFilter.as
     ${AS_SOURCE_DIR}/ItemMenus/BarterDataSetter.as
     ${AS_SOURCE_DIR}/ItemMenus/BarterMenu.as
     ${AS_SOURCE_DIR}/ItemMenus/BottomBar.as
