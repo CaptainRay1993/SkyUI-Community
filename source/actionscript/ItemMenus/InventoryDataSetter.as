@@ -120,7 +120,12 @@ class InventoryDataSetter extends ItemcardDataExtender
       {
          return undefined;
       }
-      if(a_entryObject.keywords.ccBGSSSE001_FishingPoleKW != undefined)
+      if(a_entryObject.keywords.ArmorJewelry != undefined || a_entryObject.keywords.ArmorClothing != undefined)
+      {
+         a_entryObject.material = null;
+         a_entryObject.materialDisplay = null;
+      }
+      else if(a_entryObject.keywords.ccBGSSSE001_FishingPoleKW != undefined)
       {
          a_entryObject.material = null;
          a_entryObject.materialDisplay = null;
@@ -254,16 +259,6 @@ class InventoryDataSetter extends ItemcardDataExtender
       {
          a_entryObject.material = skyui.defines.Material.WOOD;
          a_entryObject.materialDisplay = skyui.util.Translator.translate("$Wood");
-      }
-      else if(a_entryObject.keywords.ArmorJewelry != undefined)
-      {
-         a_entryObject.material = null;
-         a_entryObject.materialDisplay = null;
-      }
-      else if(a_entryObject.keywords.ArmorClothing != undefined)
-      {
-         a_entryObject.material = null;
-         a_entryObject.materialDisplay = null;
       }
    }
    function processWeaponType(a_entryObject)
@@ -980,10 +975,14 @@ class InventoryDataSetter extends ItemcardDataExtender
                   a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Map");
                   break;
                case skyui.defines.Form.FORMID_MISCAZURASSTAR:
+                  a_entryObject.subType = skyui.defines.Item.MISC_ARTIFACT;
+                  a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Artifact");
+                  break;
                case skyui.defines.Form.FORMID_MISCARTIFACT1:
                case skyui.defines.Form.FORMID_MISCARTIFACT2:
                   a_entryObject.subType = skyui.defines.Item.MISC_ARTIFACT;
                   a_entryObject.subTypeDisplay = skyui.util.Translator.translate("$Artifact");
+                  a_entryObject.iconLabel = "default_potion";
                   break;
                case skyui.defines.Form.FORMID_MISCPOTION:
                   a_entryObject.subType = skyui.defines.Item.MISC_POTION;
