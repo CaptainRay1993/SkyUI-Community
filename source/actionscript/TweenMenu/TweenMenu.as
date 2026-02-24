@@ -29,6 +29,8 @@ class TweenMenu extends MovieClip
       gfx.io.GameDelegate.addCallBack("ShowMenu",this,"ShowMenu");
       gfx.io.GameDelegate.addCallBack("HideMenu",this,"HideMenu");
       gfx.io.GameDelegate.addCallBack("ResetStatsButton",this,"ResetStatsButton");
+      gfx.io.GameDelegate.addCallBack("SetDateString",this,"SetDateString");
+      gfx.io.GameDelegate.addCallBack("SetPlayerInfo",this,"SetPlayerInfo");
       this.LevelMeter = new Components.Meter(this.BottomBarTweener_mc.BottomBar_mc.LevelProgressBar);
       gfx.managers.FocusHandler.instance.setFocus(this,0);
       Shared.GlobalFunc.SetLockFunction();
@@ -100,25 +102,40 @@ class TweenMenu extends MovieClip
    }
    function StartOpenMenuAnim()
    {
-      if(arguments[0])
-      {
-         this.Selections_mc.SkillsText_mc.textField.SetText("$LEVEL UP");
-         this.bLevelUp = true;
-      }
-      else
-      {
-         this.bLevelUp = false;
-      }
+      this.SetPlayerInfo(arguments[0], arguments[2], arguments[3]);
+
       this.gotoAndPlay("startExpand");
       this.BottomBarTweener_mc._alpha = 100;
       if(arguments[1] != undefined)
       {
-         this.BottomBarTweener_mc.BottomBar_mc.DateText.SetText(arguments[1]);
+         this.SetDateString(arguments[1]);
          this.BottomBarTweener_mc.gotoAndPlay("startExpand");
       }
+   }
+   function SetPlayerInfo(a_bLevelUp, a_fLevel, a_fPercent)
+   {
+      this.bLevelUp = a_bLevelUp;
+
       this.BottomBarTweener_mc.BottomBar_mc.LevelNumberLabel.textAutoSize = "shrink";
-      this.BottomBarTweener_mc.BottomBar_mc.LevelNumberLabel.SetText(arguments[2]);
-      this.LevelMeter.SetPercent(arguments[3]);
+      this.BottomBarTweener_mc.BottomBar_mc.LevelNumberLabel.SetText(a_fLevel);
+
+      this.LevelMeter.SetPercent(a_fPercent);
+
+      if(this.bLevelUp)
+      {
+         this.Selections_mc.SkillsText_mc.textField.SetText("$LEVEL UP");
+      }
+      else
+      {
+         this.Selections_mc.SkillsText_mc.textField.SetText("$SKILLS");
+      }
+   }
+   function SetDateString(a_strDate)
+   {
+      if(a_strDate != undefined)
+      {
+         this.BottomBarTweener_mc.BottomBar_mc.DateText.SetText(a_strDate);
+      }
    }
    function onFinishOpenMenuAnim()
    {
