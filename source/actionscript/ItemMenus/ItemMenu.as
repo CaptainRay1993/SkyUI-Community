@@ -31,6 +31,8 @@ class ItemMenu extends MovieClip
    var bEnableTabs = false;
    var bPCControlsReady = true;
    var bFadedIn = true;
+
+   
    function ItemMenu()
    {
       super();
@@ -40,7 +42,20 @@ class ItemMenu extends MovieClip
       skyui.util.ConfigManager.registerLoadCallback(this,"onConfigLoad");
       this.bFadedIn = true;
       this._bItemCardFadedIn = false;
+
+      var ORIGINAL_ASPECT_RATIO = 16 / 9;
+      var CUSTOM_ASPECT_RATIO = 21 / 9;
+      var xscale = ORIGINAL_ASPECT_RATIO / CUSTOM_ASPECT_RATIO;
+
+      this.inventoryLists._width *= xscale;
+      this.itemCard._width *= xscale;
+      this.bottomBar.playerInfoCard._width *= xscale;
+      this.bottomBar.buttonPanel._width *= xscale;
+      this.exitMenuRect._width *= xscale;
+      
+      Stage.scaleMode = "exactFit";
    }
+
    function InitExtensions(a_bPlayBladeSound)
    {
       skse.ExtendData(true);
@@ -359,9 +374,13 @@ class ItemMenu extends MovieClip
    }
    function positionFixedElements()
    {
+      var ORIGINAL_ASPECT_RATIO = 16 / 9;
+      var CUSTOM_ASPECT_RATIO = 21 / 9;
+      var xscale = ORIGINAL_ASPECT_RATIO / CUSTOM_ASPECT_RATIO;
+
       Shared.GlobalFunc.SetLockFunction();
       this.inventoryLists.Lock("L");
-      this.inventoryLists._x -= 20;
+      this.inventoryLists._x -= 20 * xscale;
       var _loc3_ = Stage.visibleRect.x + Stage.safeRect.x;
       var _loc2_ = Stage.visibleRect.x + Stage.visibleRect.width - Stage.safeRect.x;
       this.bottomBar.positionElements(_loc3_,_loc2_);
@@ -371,14 +390,18 @@ class ItemMenu extends MovieClip
    }
    function positionFloatingElements()
    {
+      var ORIGINAL_ASPECT_RATIO = 16 / 9;
+      var CUSTOM_ASPECT_RATIO = 21 / 9;
+      var xscale = ORIGINAL_ASPECT_RATIO / CUSTOM_ASPECT_RATIO;
+      
       var _loc8_ = Stage.visibleRect.x + Stage.safeRect.x;
       var _loc6_ = Stage.visibleRect.x + Stage.visibleRect.width - Stage.safeRect.x;
       var _loc7_ = this.inventoryLists.getContentBounds();
-      var _loc5_ = this.inventoryLists._x + _loc7_[0] + _loc7_[2] + 25;
+      var _loc5_ = this.inventoryLists._x + (_loc7_[0] + _loc7_[2] + 25) * xscale;
       var _loc2_ = this.itemCard._parent;
       var _loc3_ = this._config.ItemInfo.itemcard;
       var _loc9_ = this._config.ItemInfo.itemicon;
-      var _loc4_ = (_loc6_ - _loc5_) / _loc2_._width;
+      var _loc4_ = (_loc6_ - _loc5_) / (_loc2_._width * xscale);
       if(_loc4_ < 1)
       {
          _loc2_._width *= _loc4_;
