@@ -23,8 +23,8 @@ foreach(REQUIRED_VAR OUTPUT_DIR DEPLOY_LISTS_DIR SWF_COMPILED_BASE SWF_PASSTHROU
     endif()
 endforeach()
 
-# Helper: deploy a list of files preserving sub-path relative to one of the BASES into SUBDIR
-macro(_deploy_files LIST_FILE BASES SUBDIR)
+# Helper: deploy a list of files preserving sub-path relative to BASE into SUBDIR
+macro(_deploy_files LIST_FILE BASE SUBDIR)
     if(EXISTS "${LIST_FILE}")
         file(STRINGS "${LIST_FILE}" _FILES)
         foreach(_FILE IN LISTS _FILES)
@@ -35,20 +35,7 @@ macro(_deploy_files LIST_FILE BASES SUBDIR)
                 message(WARNING "Deploy.cmake: file not found: ${_FILE}")
                 continue()
             endif()
-
-            set(_REL "")
-            foreach(_BASE IN LISTS BASES)
-                file(RELATIVE_PATH _TMP_REL "${_BASE}" "${_FILE}")
-                if(NOT _TMP_REL MATCHES "^\\.\\./")
-                    set(_REL "${_TMP_REL}")
-                    break()
-                endif()
-            endforeach()
-
-            if("${_REL}" STREQUAL "")
-                get_filename_component(_REL "${_FILE}" NAME)
-            endif()
-
+            file(RELATIVE_PATH _REL "${BASE}" "${_FILE}")
             set(_DEST "${OUTPUT_DIR}/${SUBDIR}/${_REL}")
             get_filename_component(_DEST_DIR "${_DEST}" DIRECTORY)
             file(MAKE_DIRECTORY "${_DEST_DIR}")
@@ -86,12 +73,9 @@ _deploy_files(
 message(STATUS "  Deployed compiled SWFs")
 
 # ---- Deploy pass-through SWFs (from source tree) ----------------------------
-# Support both data/interface and data_vanilla/interface as bases
-set(_PASSTHROUGH_BASES "${SWF_PASSTHROUGH_BASE}" "${SWF_PASSTHROUGH_EXT_BASE}")
-
 _deploy_files(
     "${DEPLOY_LISTS_DIR}/swf_passthrough.txt"
-    "${_PASSTHROUGH_BASES}"
+    "${SWF_PASSTHROUGH_BASE}"
     "interface"
 )
 message(STATUS "  Deployed pass-through SWFs")
