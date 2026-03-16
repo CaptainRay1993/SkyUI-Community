@@ -198,12 +198,6 @@ endif()
 set(AS_SWF_DIR    "${CMAKE_CURRENT_SOURCE_DIR}/source/actionscript/swf")
 set(AS_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/source/actionscript")
 
-file(GLOB_RECURSE _ALL_SWF_RELPATHS
-    CONFIGURE_DEPENDS
-    RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}/data/interface"
-    "${CMAKE_CURRENT_SOURCE_DIR}/data/interface/*.swf"
-)
-
 SkyUI_AS_GlobalAssemble_Init(
     AS_SOURCE_DIR   "${AS_SOURCE_DIR}"
     ASSEMBLE_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/cmake/AssembleScripts.cmake"
@@ -213,54 +207,66 @@ set(AS_TARGETS            "")
 set(SWF_COMPILED_OUTPUTS  "")
 set(SWF_PASSTHROUGH_FILES "")
 
-foreach(SWF_REL ${_ALL_SWF_RELPATHS})
-    get_filename_component(SWF_NAME_WE  "${SWF_REL}" NAME_WE)
-    get_filename_component(SWF_DIR_PART "${SWF_REL}" DIRECTORY)
+# SWF search roots
+set(SWF_ROOTS "data/interface" "data_ext/interface")
 
-    if(SWF_DIR_PART)
-        set(_CMAKE_REL  "${SWF_DIR_PART}/${SWF_NAME_WE}.cmake")
-        string(REPLACE "/" "_" _VAR_PREFIX "${SWF_DIR_PART}/${SWF_NAME_WE}")
-    else()
-        set(_CMAKE_REL  "${SWF_NAME_WE}.cmake")
-        set(_VAR_PREFIX "${SWF_NAME_WE}")
-    endif()
+foreach(SWF_ROOT ${SWF_ROOTS})
+    file(GLOB_RECURSE _SWF_RELPATHS
+        CONFIGURE_DEPENDS
+        RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}/${SWF_ROOT}"
+        "${CMAKE_CURRENT_SOURCE_DIR}/${SWF_ROOT}/*.swf"
+    )
 
-    set(_SWF_CMAKE_FILE "${AS_SWF_DIR}/${_CMAKE_REL}")
+    foreach(SWF_REL ${_SWF_RELPATHS})
+        get_filename_component(SWF_NAME_WE  "${SWF_REL}" NAME_WE)
+        get_filename_component(SWF_DIR_PART "${SWF_REL}" DIRECTORY)
 
-    if(FFDEC_CLI AND EXISTS "${_SWF_CMAKE_FILE}")
-        include("${_SWF_CMAKE_FILE}")
-
-        set(_AS_TARGET "AS_${_VAR_PREFIX}")
-
-        set(_FRAME_SOURCES_ARG "")
-        if(DEFINED ${_VAR_PREFIX}_FRAME_SOURCES AND ${_VAR_PREFIX}_FRAME_SOURCES)
-            set(_FRAME_SOURCES_ARG FRAME_SOURCES ${${_VAR_PREFIX}_FRAME_SOURCES})
+        if(SWF_DIR_PART)
+            set(_CMAKE_REL  "${SWF_DIR_PART}/${SWF_NAME_WE}.cmake")
+            string(REPLACE "/" "_" _VAR_PREFIX "${SWF_DIR_PART}/${SWF_NAME_WE}")
+        else()
+            set(_CMAKE_REL  "${SWF_NAME_WE}.cmake")
+            set(_VAR_PREFIX "${SWF_NAME_WE}")
         endif()
 
-        # Validate that the included .cmake file actually defined the SOURCES variable.
-        # Common mistake: variable name in the .cmake file doesn't match _VAR_PREFIX.
-        if(NOT ${_VAR_PREFIX}_SOURCES)
-            message(FATAL_ERROR
-                "[SkyUI] ActionScript sources not found for: ${SWF_REL}\n"
-                "  Expected variable : ${_VAR_PREFIX}_SOURCES\n"
-                "  Defined in        : ${_SWF_CMAKE_FILE}\n"
-                "  Make sure the .cmake file sets:\n"
-                "    set(${_VAR_PREFIX}_SOURCES ...)  ")
+        set(_SWF_CMAKE_FILE "${AS_SWF_DIR}/${_CMAKE_REL}")
+
+        if(FFDEC_CLI AND EXISTS "${_SWF_CMAKE_FILE}")
+            include("${_SWF_CMAKE_FILE}")
+
+            set(_AS_TARGET "AS_${_VAR_PREFIX}")
+
+            set(_FRAME_SOURCES_ARG "")
+            if(DEFINED ${_VAR_PREFIX}_FRAME_SOURCES AND ${_VAR_PREFIX}_FRAME_SOURCES)
+                set(_FRAME_SOURCES_ARG FRAME_SOURCES ${${_VAR_PREFIX}_FRAME_SOURCES})
+            endif()
+
+            # Validate that the included .cmake file actually defined the SOURCES variable.
+            # Common mistake: variable name in the .cmake file doesn't match _VAR_PREFIX.
+            if(NOT ${_VAR_PREFIX}_SOURCES)
+                message(FATAL_ERROR
+                    "[SkyUI] ActionScript sources not found for: ${SWF_REL}\n"
+                    "  Expected variable : ${_VAR_PREFIX}_SOURCES\n"
+                    "  Defined in        : ${_SWF_CMAKE_FILE}\n"
+                    "  Make sure the .cmake file sets:\n"
+                    "    set(${_VAR_PREFIX}_SOURCES ...)  ")
+            endif()
+
+            SkyUI_AS_Add(
+                TARGET_NAME  "${_AS_TARGET}"
+                SWF_REL      "${SWF_REL}"
+                SWF_BASE_DIR "${SWF_ROOT}"
+                SOURCES      ${${_VAR_PREFIX}_SOURCES}
+                ${_FRAME_SOURCES_ARG}
+            )
+
+            list(APPEND AS_TARGETS           "${_AS_TARGET}")
+            list(APPEND SWF_COMPILED_OUTPUTS "${${_AS_TARGET}_OUTPUT}")
+        else()
+            list(APPEND SWF_PASSTHROUGH_FILES
+                "${CMAKE_CURRENT_SOURCE_DIR}/${SWF_ROOT}/${SWF_REL}")
         endif()
-
-        SkyUI_AS_Add(
-            TARGET_NAME "${_AS_TARGET}"
-            SWF_REL     "${SWF_REL}"
-            SOURCES     ${${_VAR_PREFIX}_SOURCES}
-            ${_FRAME_SOURCES_ARG}
-        )
-
-        list(APPEND AS_TARGETS           "${_AS_TARGET}")
-        list(APPEND SWF_COMPILED_OUTPUTS "${${_AS_TARGET}_OUTPUT}")
-    else()
-        list(APPEND SWF_PASSTHROUGH_FILES
-            "${CMAKE_CURRENT_SOURCE_DIR}/data/interface/${SWF_REL}")
-    endif()
+    endforeach()
 endforeach()
 
 SkyUI_AS_GlobalAssemble_Finalize()
@@ -307,6 +313,7 @@ if(IS_DEBUG_BUILD)
             "-DDEPLOY_LISTS_DIR=${_DEPLOY_LISTS_DIR}"
             "-DSWF_COMPILED_BASE=${CMAKE_BINARY_DIR}/interface"
             "-DSWF_PASSTHROUGH_BASE=${CMAKE_CURRENT_SOURCE_DIR}/data/interface"
+            "-DSWF_PASSTHROUGH_EXT_BASE=${CMAKE_CURRENT_SOURCE_DIR}/data_ext/interface"
             -P "${_DEPLOY_SCRIPT}"
         COMMAND "${CMAKE_COMMAND}" -E touch "${_DEPLOY_STAMP}"
         DEPENDS
@@ -332,6 +339,7 @@ else()
     file(GLOB_RECURSE _EXTRA_INTERFACE_FILES
         CONFIGURE_DEPENDS
         "${CMAKE_CURRENT_SOURCE_DIR}/data/interface/*"
+        "${CMAKE_CURRENT_SOURCE_DIR}/data_ext/interface/*"
     )
     list(FILTER _EXTRA_INTERFACE_FILES EXCLUDE REGEX "\\.swf$")
 
@@ -347,6 +355,7 @@ else()
         PREFIX
             "${CMAKE_BINARY_DIR}"
             "${CMAKE_CURRENT_SOURCE_DIR}/data"
+            "${CMAKE_CURRENT_SOURCE_DIR}/data_ext"
     )
     add_dependencies("BSA" "Papyrus" "ActionScript")
 
