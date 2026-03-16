@@ -86,7 +86,7 @@ _deploy_files(
 message(STATUS "  Deployed compiled SWFs")
 
 # ---- Deploy pass-through SWFs (from source tree) ----------------------------
-# Support both data/interface and data_ext/interface as bases
+# Support both data/interface and data_vanilla/interface as bases
 set(_PASSTHROUGH_BASES "${SWF_PASSTHROUGH_BASE}" "${SWF_PASSTHROUGH_EXT_BASE}")
 
 _deploy_files(

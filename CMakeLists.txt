@@ -195,7 +195,7 @@ endif()
 # CONFIGURE_DEPENDS: adding a new .swf to data/interface/ automatically
 # triggers re-configure without manual cmake --preset invocation.
 
-set(AS_SWF_DIR    "${CMAKE_CURRENT_SOURCE_DIR}/source/actionscript/swf")
+set(AS_SWF_DIR    "${CMAKE_CURRENT_SOURCE_DIR}/source/swf")
 set(AS_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/source/actionscript")
 
 SkyUI_AS_GlobalAssemble_Init(
@@ -208,7 +208,7 @@ set(SWF_COMPILED_OUTPUTS  "")
 set(SWF_PASSTHROUGH_FILES "")
 
 # SWF search roots
-set(SWF_ROOTS "data/interface" "data_ext/interface")
+set(SWF_ROOTS "data/interface" "data_vanilla/interface")
 
 foreach(SWF_ROOT ${SWF_ROOTS})
     file(GLOB_RECURSE _SWF_RELPATHS
@@ -313,7 +313,7 @@ if(IS_DEBUG_BUILD)
             "-DDEPLOY_LISTS_DIR=${_DEPLOY_LISTS_DIR}"
             "-DSWF_COMPILED_BASE=${CMAKE_BINARY_DIR}/interface"
             "-DSWF_PASSTHROUGH_BASE=${CMAKE_CURRENT_SOURCE_DIR}/data/interface"
-            "-DSWF_PASSTHROUGH_EXT_BASE=${CMAKE_CURRENT_SOURCE_DIR}/data_ext/interface"
+            "-DSWF_PASSTHROUGH_EXT_BASE=${CMAKE_CURRENT_SOURCE_DIR}/data_vanilla/interface"
             -P "${_DEPLOY_SCRIPT}"
         COMMAND "${CMAKE_COMMAND}" -E touch "${_DEPLOY_STAMP}"
         DEPENDS
@@ -339,7 +339,7 @@ else()
     file(GLOB_RECURSE _EXTRA_INTERFACE_FILES
         CONFIGURE_DEPENDS
         "${CMAKE_CURRENT_SOURCE_DIR}/data/interface/*"
-        "${CMAKE_CURRENT_SOURCE_DIR}/data_ext/interface/*"
+        "${CMAKE_CURRENT_SOURCE_DIR}/data_vanilla/interface/*"
     )
     list(FILTER _EXTRA_INTERFACE_FILES EXCLUDE REGEX "\\.swf$")
 
@@ -355,7 +355,7 @@ else()
         PREFIX
             "${CMAKE_BINARY_DIR}"
             "${CMAKE_CURRENT_SOURCE_DIR}/data"
-            "${CMAKE_CURRENT_SOURCE_DIR}/data_ext"
+            "${CMAKE_CURRENT_SOURCE_DIR}/data_vanilla"
     )
     add_dependencies("BSA" "Papyrus" "ActionScript")
 
