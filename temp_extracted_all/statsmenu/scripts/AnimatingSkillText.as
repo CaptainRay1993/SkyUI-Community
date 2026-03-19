@@ -1,1 +1,0 @@
-Object.registerClass("AnimatingSkillText",AnimatedSkillText);

@@ -1,2 +1,0 @@
-RequestCharacterListLoad();
-stop();

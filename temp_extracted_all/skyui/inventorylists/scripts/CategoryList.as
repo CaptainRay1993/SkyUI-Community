@@ -1,1 +1,0 @@
-Object.registerClass("CategoryList",CategoryList);

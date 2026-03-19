@@ -1,1 +1,0 @@
-this.hitArea = this.HitArea;

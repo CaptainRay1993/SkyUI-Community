@@ -1,1 +1,0 @@
-Object.registerClass("AutoResizeTextBacking",AutoResizeTextBacking);

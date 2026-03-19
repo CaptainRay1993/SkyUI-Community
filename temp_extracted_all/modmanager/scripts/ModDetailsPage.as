@@ -1,1 +1,0 @@
-Object.registerClass("ModDetailsPage",ModDetailsPage);

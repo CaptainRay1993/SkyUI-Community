@@ -1,2 +1,0 @@
-_visible = false;
-stop();

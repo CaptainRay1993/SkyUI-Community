@@ -1,1 +1,0 @@
-Object.registerClass("TweenMenuObj",TweenMenu);

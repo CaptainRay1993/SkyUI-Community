@@ -1,3 +1,0 @@
-on(construct){
-   disableFocus = true;
-}

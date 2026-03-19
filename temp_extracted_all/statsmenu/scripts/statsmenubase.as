@@ -1,1 +1,0 @@
-Object.registerClass("statsmenubase",StatsMenu);

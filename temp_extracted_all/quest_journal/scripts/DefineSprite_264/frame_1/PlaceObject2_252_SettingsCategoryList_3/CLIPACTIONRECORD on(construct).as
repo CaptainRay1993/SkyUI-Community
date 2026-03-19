@@ -1,3 +1,0 @@
-on(construct){
-   textOption = "None";
-}
