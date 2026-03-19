@@ -11,8 +11,13 @@ foreach(REQUIRED_VAR STAGING_DIR BSA_FILE ESP_FILE ZIP_OUTPUT)
     endif()
 endforeach()
 
-# 1. Create staging directory
+# 1. Create staging and output directories
 file(MAKE_DIRECTORY "${STAGING_DIR}")
+
+get_filename_component(_ZIP_DIR "${ZIP_OUTPUT}" DIRECTORY)
+if(NOT EXISTS "${_ZIP_DIR}")
+    file(MAKE_DIRECTORY "${_ZIP_DIR}")
+endif()
 
 # 2. Copy both files into the staging directory individually
 foreach(SRC IN ITEMS "${BSA_FILE}" "${ESP_FILE}")
