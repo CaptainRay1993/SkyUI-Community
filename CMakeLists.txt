@@ -44,7 +44,7 @@ if(IS_DEBUG_BUILD)
     endif()
 endif()
 
-message(STATUS "[SkyUI] Build type : ${CMAKE_BUILD_TYPE}")
+message(STATUS "[Build] Build type : ${CMAKE_BUILD_TYPE}")
 
 # ==============================================================================
 # § 2  Module Paths
@@ -73,10 +73,10 @@ if(NOT FFDEC_CLI)
 endif()
 
 if(FFDEC_CLI)
-    message(STATUS "[SkyUI] FFDec CLI    : ${FFDEC_CLI}")
+    message(STATUS "[Build] FFDec CLI    : ${FFDEC_CLI}")
 else()
     message(WARNING
-        "[SkyUI] FFDec CLI not found. ActionScript compilation will be skipped.")
+        "[Build] FFDec CLI not found. ActionScript compilation will be skipped.")
 endif()
 
 # ==============================================================================
@@ -106,7 +106,7 @@ if(PAPYRUS_SOURCES)
         SKIP_DEFAULT_IMPORTS
     )
 else()
-    message(STATUS "[SkyUI] No Papyrus sources found -- skipping.")
+    message(STATUS "[Build] No Papyrus sources found -- skipping.")
     add_custom_target("Papyrus")
     set(Papyrus_OUTPUT "")
 endif()
