@@ -52,7 +52,7 @@ Usage
 
 Step 1: Before the SWF loop, call once:
 
-  SkyUI_AS_GlobalAssemble_Init(
+  AS_GlobalAssemble_Init(
       AS_SOURCE_DIR    <path>
       ASSEMBLE_SCRIPT  <path/AssembleScripts.cmake>
   )
@@ -68,7 +68,7 @@ Step 2: Inside the SWF loop, call per SWF:
 
 Step 3: After the loop, call once to finalize the global assemble target:
 
-  SkyUI_AS_GlobalAssemble_Finalize()
+  AS_GlobalAssemble_Finalize()
 
 After Add_AS, ``${TARGET_NAME}_OUTPUT`` is set in the calling scope.
 
@@ -78,33 +78,33 @@ After Add_AS, ``${TARGET_NAME}_OUTPUT`` is set in the calling scope.
 # Internal state (global properties, visible across function boundaries)
 # ---------------------------------------------------------------------------
 
-define_property(GLOBAL PROPERTY _SKYUI_AS_SOURCE_DIR)
-define_property(GLOBAL PROPERTY _SKYUI_AS_ASSEMBLE_SCRIPT)
-define_property(GLOBAL PROPERTY _SKYUI_AS_GLOBAL_STAGING)
-define_property(GLOBAL PROPERTY _SKYUI_AS_ALL_SOURCES)   # accumulates across calls
-define_property(GLOBAL PROPERTY _SKYUI_AS_ALL_FRAME_SOURCES)
+define_property(GLOBAL PROPERTY _AS_SOURCE_DIR)
+define_property(GLOBAL PROPERTY _AS_ASSEMBLE_SCRIPT)
+define_property(GLOBAL PROPERTY _AS_GLOBAL_STAGING)
+define_property(GLOBAL PROPERTY _AS_ALL_SOURCES)   # accumulates across calls
+define_property(GLOBAL PROPERTY _AS_ALL_FRAME_SOURCES)
 
 # ---------------------------------------------------------------------------
-# SkyUI_AS_GlobalAssemble_Init
+# AS_GlobalAssemble_Init
 # ---------------------------------------------------------------------------
 # Call ONCE before the SWF discovery loop.
 # ---------------------------------------------------------------------------
-function(SkyUI_AS_GlobalAssemble_Init)
+function(AS_GlobalAssemble_Init)
     cmake_parse_arguments(ARG "" "AS_SOURCE_DIR;ASSEMBLE_SCRIPT" "" ${ARGN})
 
     if(NOT ARG_AS_SOURCE_DIR)
-        message(FATAL_ERROR "SkyUI_AS_GlobalAssemble_Init: AS_SOURCE_DIR is required.")
+        message(FATAL_ERROR "AS_GlobalAssemble_Init: AS_SOURCE_DIR is required.")
     endif()
     if(NOT ARG_ASSEMBLE_SCRIPT)
-        message(FATAL_ERROR "SkyUI_AS_GlobalAssemble_Init: ASSEMBLE_SCRIPT is required.")
+        message(FATAL_ERROR "AS_GlobalAssemble_Init: ASSEMBLE_SCRIPT is required.")
     endif()
 
-    set_property(GLOBAL PROPERTY _SKYUI_AS_SOURCE_DIR      "${ARG_AS_SOURCE_DIR}")
-    set_property(GLOBAL PROPERTY _SKYUI_AS_ASSEMBLE_SCRIPT "${ARG_ASSEMBLE_SCRIPT}")
-    set_property(GLOBAL PROPERTY _SKYUI_AS_GLOBAL_STAGING
+    set_property(GLOBAL PROPERTY _AS_SOURCE_DIR      "${ARG_AS_SOURCE_DIR}")
+    set_property(GLOBAL PROPERTY _AS_ASSEMBLE_SCRIPT "${ARG_ASSEMBLE_SCRIPT}")
+    set_property(GLOBAL PROPERTY _AS_GLOBAL_STAGING
         "${CMAKE_BINARY_DIR}/_AS_staging")
-    set_property(GLOBAL PROPERTY _SKYUI_AS_ALL_SOURCES "")
-    set_property(GLOBAL PROPERTY _SKYUI_AS_ALL_FRAME_SOURCES "")
+    set_property(GLOBAL PROPERTY _AS_ALL_SOURCES "")
+    set_property(GLOBAL PROPERTY _AS_ALL_FRAME_SOURCES "")
 endfunction()
 
 # ---------------------------------------------------------------------------
@@ -135,12 +135,12 @@ function(Add_AS)
     endif()
 
     # Retrieve global state
-    get_property(_AS_SOURCE_DIR   GLOBAL PROPERTY _SKYUI_AS_SOURCE_DIR)
-    get_property(_GLOBAL_STAGING  GLOBAL PROPERTY _SKYUI_AS_GLOBAL_STAGING)
+    get_property(_AS_SOURCE_DIR   GLOBAL PROPERTY _AS_SOURCE_DIR)
+    get_property(_GLOBAL_STAGING  GLOBAL PROPERTY _AS_GLOBAL_STAGING)
 
     if(NOT _AS_SOURCE_DIR OR NOT _GLOBAL_STAGING)
         message(FATAL_ERROR
-            "Add_AS: call SkyUI_AS_GlobalAssemble_Init() first.")
+            "Add_AS: call AS_GlobalAssemble_Init() first.")
     endif()
 
     # Prepend source dir to relative paths
@@ -165,10 +165,10 @@ function(Add_AS)
     set(ARG_FRAME_SOURCES ${_REAL_FRAME_SOURCES})
 
     # Accumulate sources into global lists
-    set_property(GLOBAL APPEND PROPERTY _SKYUI_AS_ALL_SOURCES ${ARG_SOURCES})
+    set_property(GLOBAL APPEND PROPERTY _AS_ALL_SOURCES ${ARG_SOURCES})
     if(ARG_FRAME_SOURCES)
         set_property(GLOBAL APPEND PROPERTY
-            _SKYUI_AS_ALL_FRAME_SOURCES ${ARG_FRAME_SOURCES})
+            _AS_ALL_FRAME_SOURCES ${ARG_FRAME_SOURCES})
     endif()
 
     # ---- Inject step -------------------------------------------------------
@@ -265,17 +265,17 @@ function(Add_AS)
 endfunction()
 
 # ---------------------------------------------------------------------------
-# SkyUI_AS_GlobalAssemble_Finalize
+# AS_GlobalAssemble_Finalize
 # ---------------------------------------------------------------------------
 # Call ONCE after the SWF discovery loop.
 # Creates the ActionScript_Assemble target with all accumulated sources.
 # ---------------------------------------------------------------------------
-function(SkyUI_AS_GlobalAssemble_Finalize)
-    get_property(_AS_SOURCE_DIR     GLOBAL PROPERTY _SKYUI_AS_SOURCE_DIR)
-    get_property(_ASSEMBLE_SCRIPT   GLOBAL PROPERTY _SKYUI_AS_ASSEMBLE_SCRIPT)
-    get_property(_GLOBAL_STAGING    GLOBAL PROPERTY _SKYUI_AS_GLOBAL_STAGING)
-    get_property(_ALL_SOURCES       GLOBAL PROPERTY _SKYUI_AS_ALL_SOURCES)
-    get_property(_ALL_FRAME_SOURCES GLOBAL PROPERTY _SKYUI_AS_ALL_FRAME_SOURCES)
+function(AS_GlobalAssemble_Finalize)
+    get_property(_AS_SOURCE_DIR     GLOBAL PROPERTY _AS_SOURCE_DIR)
+    get_property(_ASSEMBLE_SCRIPT   GLOBAL PROPERTY _AS_ASSEMBLE_SCRIPT)
+    get_property(_GLOBAL_STAGING    GLOBAL PROPERTY _AS_GLOBAL_STAGING)
+    get_property(_ALL_SOURCES       GLOBAL PROPERTY _AS_ALL_SOURCES)
+    get_property(_ALL_FRAME_SOURCES GLOBAL PROPERTY _AS_ALL_FRAME_SOURCES)
 
     # Deduplicate: shared classes appear in multiple SWF source lists.
     list(REMOVE_DUPLICATES _ALL_SOURCES)

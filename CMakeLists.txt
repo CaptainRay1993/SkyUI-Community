@@ -117,7 +117,7 @@ endif()
 
 set(AS_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/source/actionscript")
 
-SkyUI_AS_GlobalAssemble_Init(
+AS_GlobalAssemble_Init(
     AS_SOURCE_DIR   "${AS_SOURCE_DIR}"
     ASSEMBLE_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/cmake/AssembleScripts.cmake"
 )
@@ -128,7 +128,7 @@ set(SWF_COMPILED_OUTPUTS  "")
 # Load all SWF target definitions from a single file (calls Add_AS for each)
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/SWFSources.cmake")
 
-SkyUI_AS_GlobalAssemble_Finalize()
+AS_GlobalAssemble_Finalize()
 
 add_custom_target("ActionScript" DEPENDS ${AS_TARGETS})
 
