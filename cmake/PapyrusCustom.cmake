@@ -75,141 +75,49 @@ with the list of expected .pex paths, matching the Papyrus_Add() convention.
 # ---------------------------------------------------------------------------
 # PapyrusCustom_Find
 # ---------------------------------------------------------------------------
-# Locates tools/Papyrus/papyrus.exe.  If not found, downloads and extracts
-# the compiler automatically from the official GitHub release.
-#
-# After a successful download the binary lands in
-#   <source_root>/tools/Papyrus/
-# which is where find_program looks on every subsequent configure — so the
-# download happens exactly once and survives build-directory wipes.
-#
-# Add  tools/Papyrus/  to .gitignore to keep it out of version control.
-#
-# Hash verification
-# -----------------
-# PAPYRUS_COMPILER_SHA256 can be set on the command line or in a toolchain
-# file to enable integrity checking:
-#
-#   cmake --preset debug -DPAPYRUS_COMPILER_SHA256=<sha256-of-the-zip>
-#
-# To compute the hash after a manual download:
-#   PowerShell:  Get-FileHash papyrus-compiler-windows.zip -Algorithm SHA256
-#   CMD:         certutil -hashfile papyrus-compiler-windows.zip SHA256
-#
-# If the variable is empty (default) the download proceeds without
-# hash verification — safe for local development, not recommended for CI.
+# Locates tools/papyrus-compiler/papyrus.exe. If not found, downloads and 
+# extracts the compiler automatically from the official GitHub release.
 # ---------------------------------------------------------------------------
 
 set(_PAPYRUS_COMPILER_URL
     "https://github.com/russo-2025/papyrus-compiler/releases/download/2025.03.18/papyrus-compiler-windows.zip"
     CACHE STRING "Download URL for the community Papyrus compiler" FORCE
 )
-set(PAPYRUS_COMPILER_SHA256 ""
-    CACHE STRING "Expected SHA256 of the Papyrus compiler ZIP (leave empty to skip verification)"
-)
-# The ZIP extracts as:  papyrus-compiler/
-#                           papyrus.exe
-#                           ...
-# We extract into tools/ so the subfolder lands at tools/papyrus-compiler/.
-# _PAPYRUS_INSTALL_DIR points at the subfolder where the binary lives.
-set(_PAPYRUS_COMPILER_SUBDIR "papyrus-compiler")
 
 # PapyrusCustom_Find is a FUNCTION, not a macro.
-#
-# Critical distinction:
-#   macro : return() exits the CALLER's scope (e.g. CMakeLists.txt!) — BUG
-#   function: return() exits only this function — correct
-#
-# find_program without NO_CACHE writes to the CMake cache (global scope),
-# so the result is visible to the caller without any PARENT_SCOPE dance.
-# The cache variable is unset (unset(CACHE{PAPYRUS_CUSTOM_COMPILER})) before
-# each search so we re-probe on every configure — same behaviour as NO_CACHE
-# but compatible with function scope.
 function(PapyrusCustom_Find)
-    # Skip download when Papyrus compilation is disabled (e.g. CI without
-    # Skyrim install).  return() here is safe because this is a function.
     if(NOT SKYUI_ENABLE_PAPYRUS)
-        message(STATUS "[SkyUI] Papyrus compilation disabled — skipping compiler detection.")
         return()
     endif()
 
-    # Clear any stale cache entry so find_program actually searches on
-    # every configure (equivalent to NO_CACHE, but cache-visible to callers).
-    # unset(CACHE{VAR}) is the CMake 4.2 explicit cache-entry syntax.
     unset(CACHE{PAPYRUS_CUSTOM_COMPILER})
 
     find_program(PAPYRUS_CUSTOM_COMPILER
         NAMES papyrus papyrus.exe
-        PATHS "${CMAKE_CURRENT_SOURCE_DIR}/tools/${_PAPYRUS_COMPILER_SUBDIR}"
+        PATHS "${CMAKE_CURRENT_SOURCE_DIR}/tools/papyrus-compiler"
         NO_DEFAULT_PATH
-        DOC "Path to the community Papyrus compiler"
     )
 
     if(NOT PAPYRUS_CUSTOM_COMPILER)
-        # Extract to tools/ so the archive subfolder papyrus-compiler/ lands
-        # directly at tools/papyrus-compiler/ without extra nesting.
-        set(_PAPYRUS_EXTRACT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/tools")
-        set(_PAPYRUS_INSTALL_DIR "${_PAPYRUS_EXTRACT_DIR}/${_PAPYRUS_COMPILER_SUBDIR}")
-        set(_PAPYRUS_ZIP         "${CMAKE_CURRENT_BINARY_DIR}/download/papyrus-compiler-windows.zip")
+        set(_ZIP "${CMAKE_CURRENT_BINARY_DIR}/download/papyrus-compiler.zip")
+        set(_EXTRACT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/tools")
 
-        message(STATUS
-            "[SkyUI] Papyrus compiler not found -- downloading from GitHub...")
+        message(STATUS "[SkyUI] Papyrus compiler not found -- downloading...")
 
         file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/download")
+        file(DOWNLOAD "${_PAPYRUS_COMPILER_URL}" "${_ZIP}" SHOW_PROGRESS)
 
-        # Build the optional EXPECTED_HASH argument only when a hash is provided.
-        set(_HASH_ARG "")
-        if(PAPYRUS_COMPILER_SHA256)
-            set(_HASH_ARG EXPECTED_HASH "SHA256=EBB5B96545D9E296352BED86BC6665551185A2867E926AF8FC0EA87026632704")
-        else()
-            message(WARNING
-                "[SkyUI] PAPYRUS_COMPILER_SHA256 is not set — "
-                "downloading without integrity check. "
-                "Set -DPAPYRUS_COMPILER_SHA256=<hash> to enable verification.")
-        endif()
+        file(ARCHIVE_EXTRACT INPUT "${_ZIP}" DESTINATION "${_EXTRACT_DIR}")
 
-        file(DOWNLOAD
-            "${_PAPYRUS_COMPILER_URL}"
-            "${_PAPYRUS_ZIP}"
-            ${_HASH_ARG}
-            SHOW_PROGRESS
-            STATUS _DOWNLOAD_STATUS
-        )
-
-        list(GET _DOWNLOAD_STATUS 0 _DOWNLOAD_ERROR_CODE)
-        if(_DOWNLOAD_ERROR_CODE)
-            list(GET _DOWNLOAD_STATUS 1 _DOWNLOAD_ERROR_MSG)
-            message(FATAL_ERROR
-                "[SkyUI] Failed to download Papyrus compiler: ${_DOWNLOAD_ERROR_MSG}\n"
-                "URL: ${_PAPYRUS_COMPILER_URL}\n"
-                "Alternatively, download manually and extract to: ${_PAPYRUS_INSTALL_DIR}")
-        endif()
-
-        message(STATUS "[SkyUI] Extracting to ${_PAPYRUS_EXTRACT_DIR} ...")
-        file(ARCHIVE_EXTRACT
-            INPUT       "${_PAPYRUS_ZIP}"
-            DESTINATION "${_PAPYRUS_EXTRACT_DIR}"
-        )
-        # Result: ${_PAPYRUS_EXTRACT_DIR}/papyrus-compiler/papyrus.exe
-
-        # Re-run find_program after extraction to resolve the full path.
         unset(CACHE{PAPYRUS_CUSTOM_COMPILER})
         find_program(PAPYRUS_CUSTOM_COMPILER
             NAMES papyrus papyrus.exe
-            PATHS "${_PAPYRUS_INSTALL_DIR}"
+            PATHS "${CMAKE_CURRENT_SOURCE_DIR}/tools/papyrus-compiler"
             NO_DEFAULT_PATH
         )
-        # _PAPYRUS_INSTALL_DIR = tools/papyrus-compiler/
+    endif()
 
-        if(NOT PAPYRUS_CUSTOM_COMPILER)
-            message(FATAL_ERROR
-                "[SkyUI] Papyrus compiler extracted but binary not found in "
-                "${_PAPYRUS_INSTALL_DIR}.\n"
-                "Check the archive layout at ${_PAPYRUS_COMPILER_URL}")
-        endif()
-
-        message(STATUS "[SkyUI] Papyrus compiler : ${PAPYRUS_CUSTOM_COMPILER} (downloaded)")
-    else()
+    if(PAPYRUS_CUSTOM_COMPILER)
         message(STATUS "[SkyUI] Papyrus compiler : ${PAPYRUS_CUSTOM_COMPILER}")
     endif()
 endfunction()

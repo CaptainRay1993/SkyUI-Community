@@ -180,88 +180,47 @@ endif()
 # ==============================================================================
 # § 5  ActionScript / SWF Compilation
 # ==============================================================================
-#
-# Three-phase configure-time setup (see cmake/ImportToSWF.cmake):
-#   Phase 1 — Init global state
-#   Phase 2 — Per-SWF loop
-#   Phase 3 — Finalize global assemble target
-#
-# Build-time graph:
-#   ActionScript_Assemble  (1× cmake -P, -cli -config autoDeobfuscate=false)
-#     ↓ ORDER-ONLY
-#   AS_swf1 … AS_swfN  →  all run in PARALLEL, each rebuilds only when
-#                          its own sources or base SWF changed
-#
-# CONFIGURE_DEPENDS: adding a new .swf to data/interface/ automatically
-# triggers re-configure without manual cmake --preset invocation.
 
-set(AS_SWF_DIR    "${CMAKE_CURRENT_SOURCE_DIR}/source/swf")
 set(AS_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/source/actionscript")
+set(SWF_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/source/swf")
 
 SkyUI_AS_GlobalAssemble_Init(
     AS_SOURCE_DIR   "${AS_SOURCE_DIR}"
     ASSEMBLE_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/cmake/AssembleScripts.cmake"
 )
 
+# Load all SWF source definitions from a single file
+include("${SWF_SOURCE_DIR}/SWFSources.cmake")
+
 set(AS_TARGETS            "")
 set(SWF_COMPILED_OUTPUTS  "")
 set(SWF_PASSTHROUGH_FILES "")
 
-# Discover SWFs from XML sources in source/swf
-file(GLOB_RECURSE _ALL_XML_RELPATHS
+# Discover all SWFs that have an XML source
+file(GLOB_RECURSE _ALL_XML_FILES
     CONFIGURE_DEPENDS
-    RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}/source/swf"
-    "${CMAKE_CURRENT_SOURCE_DIR}/source/swf/*.xml"
+    RELATIVE "${SWF_SOURCE_DIR}"
+    "${SWF_SOURCE_DIR}/*.xml"
 )
 
-set(_ALL_SWF_RELPATHS "")
-foreach(XML_REL ${_ALL_XML_RELPATHS})
-    string(REPLACE ".xml" ".swf" SWF_REL "${XML_REL}")
-    list(APPEND _ALL_SWF_RELPATHS "${SWF_REL}")
-endforeach()
-
-# Also discover any SWFs that don't have XML sources yet (passthrough)
-file(GLOB_RECURSE _ALL_DATA_SWF_RELPATHS
-    CONFIGURE_DEPENDS
-    RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}/data/interface"
-    "${CMAKE_CURRENT_SOURCE_DIR}/data/interface/*.swf"
-)
-list(APPEND _ALL_SWF_RELPATHS ${_ALL_DATA_SWF_RELPATHS})
-list(REMOVE_DUPLICATES _ALL_SWF_RELPATHS)
-
-foreach(SWF_REL ${_ALL_SWF_RELPATHS})
-    get_filename_component(SWF_NAME_WE  "${SWF_REL}" NAME_WE)
-    get_filename_component(SWF_DIR_PART "${SWF_REL}" DIRECTORY)
+foreach(XML_REL ${_ALL_XML_FILES})
+    get_filename_component(SWF_NAME_WE  "${XML_REL}" NAME_WE)
+    get_filename_component(SWF_DIR_PART "${XML_REL}" DIRECTORY)
 
     if(SWF_DIR_PART)
-        set(_CMAKE_REL  "${SWF_DIR_PART}/${SWF_NAME_WE}.cmake")
+        set(SWF_REL "${SWF_DIR_PART}/${SWF_NAME_WE}.swf")
         string(REPLACE "/" "_" _VAR_PREFIX "${SWF_DIR_PART}/${SWF_NAME_WE}")
     else()
-        set(_CMAKE_REL  "${SWF_NAME_WE}.cmake")
+        set(SWF_REL "${SWF_NAME_WE}.swf")
         set(_VAR_PREFIX "${SWF_NAME_WE}")
     endif()
 
-    set(_SWF_CMAKE_FILE "${AS_SWF_DIR}/${_CMAKE_REL}")
-
-    if(FFDEC_CLI AND EXISTS "${_SWF_CMAKE_FILE}")
-        include("${_SWF_CMAKE_FILE}")
-
+    if(FFDEC_CLI AND DEFINED ${_VAR_PREFIX}_SOURCES)
         set(_AS_TARGET "AS_${_VAR_PREFIX}")
 
         set(_FRAME_SOURCES_ARG "")
-        if(DEFINED ${_VAR_PREFIX}_FRAME_SOURCES AND ${_VAR_PREFIX}_FRAME_SOURCES)
+        if(DEFINED ${_VAR_PREFIX}_FRAME_SOURCES)
             set(_FRAME_SOURCES_ARG FRAME_SOURCES ${${_VAR_PREFIX}_FRAME_SOURCES})
-        endif()
-
-        # Validate that the included .cmake file actually defined the SOURCES variable.
-        # Common mistake: variable name in the .cmake file doesn't match _VAR_PREFIX.
-        if(NOT ${_VAR_PREFIX}_SOURCES)
-            message(FATAL_ERROR
-                "[SkyUI] ActionScript sources not found for: ${SWF_REL}\n"
-                "  Expected variable : ${_VAR_PREFIX}_SOURCES\n"
-                "  Defined in        : ${_SWF_CMAKE_FILE}\n"
-                "  Make sure the .cmake file sets:\n"
-                "    set(${_VAR_PREFIX}_SOURCES ...)  ")
         endif()
 
         SkyUI_AS_Add(
@@ -274,8 +233,41 @@ foreach(SWF_REL ${_ALL_SWF_RELPATHS})
         list(APPEND AS_TARGETS           "${_AS_TARGET}")
         list(APPEND SWF_COMPILED_OUTPUTS "${${_AS_TARGET}_OUTPUT}")
     else()
-        list(APPEND SWF_PASSTHROUGH_FILES
-            "${CMAKE_CURRENT_SOURCE_DIR}/data/interface/${SWF_REL}")
+        # If no custom sources, still build from XML (visual-only)
+        if(FFDEC_CLI)
+             set(_AS_TARGET "AS_${_VAR_PREFIX}")
+             SkyUI_AS_Add(
+                TARGET_NAME  "${_AS_TARGET}"
+                SWF_REL      "${SWF_REL}"
+                SOURCES      "" # No AS sources to inject
+            )
+            list(APPEND AS_TARGETS           "${_AS_TARGET}")
+            list(APPEND SWF_COMPILED_OUTPUTS "${${_AS_TARGET}_OUTPUT}")
+        else()
+            message(WARNING "[SkyUI] FFDec CLI not found, skipping XML build for ${SWF_REL}")
+        endif()
+    endif()
+endforeach()
+
+# Discover any remaining SWFs in data/interface that weren't built from XML
+file(GLOB_RECURSE _DATA_SWF_FILES
+    CONFIGURE_DEPENDS
+    RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}/data/interface"
+    "${CMAKE_CURRENT_SOURCE_DIR}/data/interface/*.swf"
+)
+
+foreach(DATA_SWF_REL ${_DATA_SWF_FILES})
+    # If this SWF was already handled by the XML loop, skip it
+    set(_ALREADY_HANDLED FALSE)
+    foreach(COMPILED_SWF ${SWF_COMPILED_OUTPUTS})
+        if(COMPILED_SWF MATCHES "${DATA_SWF_REL}$")
+            set(_ALREADY_HANDLED TRUE)
+            break()
+        endif()
+    endforeach()
+
+    if(NOT _ALREADY_HANDLED)
+        list(APPEND SWF_PASSTHROUGH_FILES "${CMAKE_CURRENT_SOURCE_DIR}/data/interface/${DATA_SWF_REL}")
     endif()
 endforeach()
 

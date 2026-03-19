@@ -161,7 +161,6 @@ function(SkyUI_AS_Add)
     # add_dependencies() (target-level) below to enforce ordering.
     # This is the key to per-SWF incremental granularity.
 
-    set(_SWF_INPUT  "${CMAKE_CURRENT_SOURCE_DIR}/${ARG_SWF_BASE_DIR}/${ARG_SWF_REL}")
     set(_SWF_OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/interface/${ARG_SWF_REL}")
     
     get_filename_component(_SWF_REL_DIR "${ARG_SWF_REL}" DIRECTORY)
@@ -173,21 +172,37 @@ function(SkyUI_AS_Add)
     endif()
 
     if(EXISTS "${_XML_SOURCE}")
+        # Build from XML source
+        set(_BUILD_COMMANDS
+            COMMAND "${FFDEC_CLI}" -xml2swf "${_XML_SOURCE}" "${_SWF_OUTPUT}"
+        )
+        
+        if(ARG_SOURCES OR ARG_FRAME_SOURCES)
+            list(APPEND _BUILD_COMMANDS
+                COMMAND "${FFDEC_CLI}"
+                    -config autoDeobfuscate=false,decompile=false
+                    -onerror abort
+                    -importScript "${_SWF_OUTPUT}" "${_SWF_OUTPUT}" "${_GLOBAL_STAGING}"
+            )
+            set(_COMMENT "Building ${ARG_SWF_REL} from XML and injecting ActionScript")
+        else()
+            set(_COMMENT "Building ${ARG_SWF_REL} from XML")
+        endif()
+
         add_custom_command(
             OUTPUT "${_SWF_OUTPUT}"
-            COMMAND "${FFDEC_CLI}" -xml2swf "${_XML_SOURCE}" "${_SWF_OUTPUT}"
-            COMMAND "${FFDEC_CLI}"
-                -config autoDeobfuscate=false,decompile=false
-                -onerror abort
-                -importScript "${_SWF_OUTPUT}" "${_SWF_OUTPUT}" "${_GLOBAL_STAGING}"
+            ${_BUILD_COMMANDS}
             DEPENDS
                 "${_XML_SOURCE}"
                 ${ARG_SOURCES}
                 ${ARG_FRAME_SOURCES}
-            COMMENT "Building ${ARG_SWF_REL} from XML and injecting ActionScript"
+            COMMENT "${_COMMENT}"
             VERBATIM
         )
     else()
+        # Fallback: copy existing SWF and inject
+        set(_SWF_INPUT "${CMAKE_CURRENT_SOURCE_DIR}/data/interface/${ARG_SWF_REL}")
+        
         add_custom_command(
             OUTPUT "${_SWF_OUTPUT}"
             COMMAND "${CMAKE_COMMAND}" -E copy_if_different
