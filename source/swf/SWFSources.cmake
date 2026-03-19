@@ -1,7 +1,8 @@
 # ActionScript sources for all SWFs
 # This file consolidates the source lists for each SWF.
 
-# Common sources used by many menus
+# ---- Common shared sources ---------------------------------------------------
+
 set(CORE_SOURCES
     ${AS_SOURCE_DIR}/Common/skyui/defines/Actor.as
     ${AS_SOURCE_DIR}/Common/skyui/defines/Armor.as
@@ -25,33 +26,23 @@ set(ITEM_MENU_CORE
     ${AS_SOURCE_DIR}/ItemMenus/ItemcardDataExtender.as
 )
 
-# Individual SWF sources
-set(bartermenu_SOURCES
-    ${ITEM_MENU_CORE}
-    ${AS_SOURCE_DIR}/ItemMenus/BarterMenu.as
-    ${AS_SOURCE_DIR}/ItemMenus/BarterDataSetter.as
+set(VANILLA_SHARED
+    ${AS_SOURCE_DIR}/Vanilla/Shared/GlobalFunc.as
+    ${AS_SOURCE_DIR}/Vanilla/Shared/Proxy.as
+    ${AS_SOURCE_DIR}/Vanilla/Shared/ButtonChange.as
+    ${AS_SOURCE_DIR}/Vanilla/Shared/ButtonMapping.as
 )
 
-set(containermenu_SOURCES
-    ${ITEM_MENU_CORE}
-    ${AS_SOURCE_DIR}/ItemMenus/ContainerMenu.as
-)
+# ---- Individual SWF sources --------------------------------------------------
 
-set(inventorymenu_SOURCES
-    ${ITEM_MENU_CORE}
-    ${AS_SOURCE_DIR}/ItemMenus/InventoryMenu.as
-)
+# Item Menus
+set(bartermenu_SOURCES      ${ITEM_MENU_CORE} ${AS_SOURCE_DIR}/ItemMenus/BarterMenu.as ${AS_SOURCE_DIR}/ItemMenus/BarterDataSetter.as)
+set(containermenu_SOURCES   ${ITEM_MENU_CORE} ${AS_SOURCE_DIR}/ItemMenus/ContainerMenu.as)
+set(inventorymenu_SOURCES   ${ITEM_MENU_CORE} ${AS_SOURCE_DIR}/ItemMenus/InventoryMenu.as)
+set(magicmenu_SOURCES       ${ITEM_MENU_CORE} ${AS_SOURCE_DIR}/ItemMenus/MagicMenu.as)
+set(giftmenu_SOURCES        ${ITEM_MENU_CORE} ${AS_SOURCE_DIR}/ItemMenus/GiftMenu.as)
 
-set(magicmenu_SOURCES
-    ${ITEM_MENU_CORE}
-    ${AS_SOURCE_DIR}/ItemMenus/MagicMenu.as
-)
-
-set(giftmenu_SOURCES
-    ${ITEM_MENU_CORE}
-    ${AS_SOURCE_DIR}/ItemMenus/GiftMenu.as
-)
-
+# Crafting
 set(craftingmenu_SOURCES
     ${CORE_SOURCES}
     ${AS_SOURCE_DIR}/CraftingMenu/CraftingMenu.as
@@ -64,6 +55,7 @@ set(craftingmenu_SOURCES
     ${AS_SOURCE_DIR}/CraftingMenu/IconTabListEntry.as
 )
 
+# Favorites
 set(favoritesmenu_SOURCES
     ${CORE_SOURCES}
     ${AS_SOURCE_DIR}/FavoritesMenu/FavoritesMenu.as
@@ -71,19 +63,45 @@ set(favoritesmenu_SOURCES
     ${AS_SOURCE_DIR}/FavoritesMenu/FavoritesListEntry.as
 )
 
-set(quest_journal_SOURCES
-    ${CORE_SOURCES}
-    ${AS_SOURCE_DIR}/QuestJournal/QuestJournal.as
+# Journal & Pause
+set(quest_journal_SOURCES   ${CORE_SOURCES} ${AS_SOURCE_DIR}/PauseMenu/Quest_Journal.as)
+set(statsmenu_SOURCES       ${VANILLA_SHARED} ${AS_SOURCE_DIR}/Vanilla/StatsMenu.as)
+set(sleepwaitmenu_SOURCES   ${VANILLA_SHARED} ${AS_SOURCE_DIR}/Vanilla/SleepWaitMenu.as)
+set(startmenu_SOURCES       ${VANILLA_SHARED} ${AS_SOURCE_DIR}/Vanilla/StartMenu.as)
+
+# Map
+set(map_SOURCES             ${CORE_SOURCES} ${AS_SOURCE_DIR}/MapMenu/Map/MapMenu.as)
+
+# MCM
+set(modmanager_SOURCES      ${AS_SOURCE_DIR}/ModConfigPanel/ConfigPanel.as)
+
+# HUD & Widgets
+set(hudmenu_SOURCES         ${VANILLA_SHARED} ${AS_SOURCE_DIR}/Vanilla/HUDMenu.as)
+set(exported_skyui_widgetloader_SOURCES ${AS_SOURCE_DIR}/HUDWidgets/WidgetLoader.as)
+set(exported_widgets_skyui_activeeffects_SOURCES
+    ${AS_SOURCE_DIR}/HUDWidgets/skyui/widgets/activeeffects/ActiveEffectsWidget.as
+    ${AS_SOURCE_DIR}/HUDWidgets/skyui/widgets/activeeffects/ActiveEffect.as
+    ${AS_SOURCE_DIR}/HUDWidgets/skyui/widgets/activeeffects/ActiveEffectsGroup.as
 )
 
-set(map_SOURCES
-    ${CORE_SOURCES}
-    ${AS_SOURCE_DIR}/MapMenu/MapMenu.as
-)
+# Tween
+set(tweenmenu_SOURCES       ${AS_SOURCE_DIR}/TweenMenu/TweenMenu.as)
 
-set(modmanager_SOURCES
-    ${AS_SOURCE_DIR}/ModConfigPanel/ModConfigPanel.as
-)
-
-# For all other SWFs that might not have custom sources defined here yet,
-# we can add them as needed. The build system will look for <SWF_NAME_WE>_SOURCES.
+# Vanilla Menus (minimal/pass-through injection)
+set(console_SOURCES         ${VANILLA_SHARED} ${AS_SOURCE_DIR}/Vanilla/Console.as)
+set(bookmenu_SOURCES        ${VANILLA_SHARED} ${AS_SOURCE_DIR}/Vanilla/BookMenu.as)
+set(messagebox_SOURCES      ${VANILLA_SHARED} ${AS_SOURCE_DIR}/Vanilla/MessageBox.as)
+set(dialoguemenu_SOURCES    ${VANILLA_SHARED} ${AS_SOURCE_DIR}/Vanilla/DialogueMenu.as)
+set(lockpickingmenu_SOURCES ${VANILLA_SHARED} ${AS_SOURCE_DIR}/Vanilla/LockpickingMenu.as)
+set(loadingmenu_SOURCES     ${VANILLA_SHARED} ${AS_SOURCE_DIR}/Vanilla/LoadingMenu.as)
+set(loadwaitspinner_SOURCES ${VANILLA_SHARED} ${AS_SOURCE_DIR}/Vanilla/LoadWaitSpinner.as)
+set(racesex_menu_SOURCES    ${VANILLA_SHARED} ${AS_SOURCE_DIR}/Vanilla/RaceSexPanels.as)
+set(trainingmenu_SOURCES    ${VANILLA_SHARED} ${AS_SOURCE_DIR}/Vanilla/TrainingMenu.as)
+set(tutorialmenu_SOURCES    ${VANILLA_SHARED} ${AS_SOURCE_DIR}/Vanilla/TutorialMenu.as)
+set(levelupmenu_SOURCES     ${VANILLA_SHARED} ${AS_SOURCE_DIR}/Vanilla/LevelUpMenu.as)
+set(kinectmenu_SOURCES      ${VANILLA_SHARED} ${AS_SOURCE_DIR}/Vanilla/KinectMenu.as)
+set(fadermenu_SOURCES       ${VANILLA_SHARED} ${AS_SOURCE_DIR}/Vanilla/FaderMenu.as)
+set(bethesdanetlogin_SOURCES ${VANILLA_SHARED} ${AS_SOURCE_DIR}/Vanilla/BethesdaNetLogin.as)
+set(creationclubmenu_SOURCES ${VANILLA_SHARED} ${AS_SOURCE_DIR}/Vanilla/CreationClubMenu.as)
+set(creditsmenu_SOURCES     ${VANILLA_SHARED} ${AS_SOURCE_DIR}/Vanilla/CreditsMenu.as)
+set(streaminginstall_SOURCES ${VANILLA_SHARED} ${AS_SOURCE_DIR}/Vanilla/StreamingInstall.as)
