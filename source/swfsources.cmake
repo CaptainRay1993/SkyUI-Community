@@ -15,6 +15,7 @@ macro(Add_SWF _TARGET_NAME _SWF_REL _XML_PATH)
     # Phase 2: Inject ActionScript sources into that base
     Add_AS(
         TARGET_NAME  AS_${_TARGET_NAME}
+        SWF_REL      "${_SWF_REL}"
         SWF_INPUT    "${_BASE_SWF}"
         SWF_OUTPUT   "${_FINAL_SWF}"
         SOURCES      ${ARGN}

@@ -67,13 +67,16 @@ endfunction()
 function(Add_AS)
     cmake_parse_arguments(ARG
         ""
-        "TARGET_NAME;SWF_INPUT;SWF_OUTPUT"
+        "TARGET_NAME;SWF_REL;SWF_INPUT;SWF_OUTPUT"
         "SOURCES;FRAME_SOURCES"
         ${ARGN}
     )
 
     if(NOT ARG_TARGET_NAME)
         message(FATAL_ERROR "Add_AS: TARGET_NAME is required.")
+    endif()
+    if(NOT ARG_SWF_REL)
+        message(FATAL_ERROR "Add_AS: SWF_REL is required.")
     endif()
     if(NOT ARG_SWF_INPUT)
         message(FATAL_ERROR "Add_AS: SWF_INPUT is required.")
@@ -120,6 +123,7 @@ function(Add_AS)
 
     add_custom_command(
         OUTPUT "${ARG_SWF_OUTPUT}"
+        COMMAND "${CMAKE_COMMAND}" -E echo "[Build] ffdec -importScript ${ARG_SWF_REL}"
         COMMAND "${CMAKE_COMMAND}" -E copy_if_different "${ARG_SWF_INPUT}" "${ARG_SWF_OUTPUT}"
         COMMAND "${FFDEC_CLI}"
             -config autoDeobfuscate=false,decompile=false
@@ -129,7 +133,6 @@ function(Add_AS)
             "${ARG_SWF_INPUT}"
             ${ARG_SOURCES}
             ${ARG_FRAME_SOURCES}
-        COMMENT "Injecting ActionScript into ${ARG_TARGET_NAME}"
         VERBATIM
     )
 
@@ -220,15 +223,20 @@ foreach(SRC ${SOURCES})
     file(MAKE_DIRECTORY "${DST_DIR}")
     file(COPY_FILE "${SRC}" "${DST}" ONLY_IF_DIFFERENT)
 
-    # Patch version constants in SkyUISplash.as
+    # Note SkyUISplash.as location for patching after the loop
     get_filename_component(DST_NAME "${DST}" NAME)
-    if(DST_NAME STREQUAL "SkyUISplash.as" AND DEFINED PROJECT_VERSION_MAJOR AND DEFINED PROJECT_VERSION_MINOR)
-        file(READ "${DST}" _SPLASH_CONTENT)
-        string(REGEX REPLACE "(SKYUI_VERSION_MAJOR[ \t]*=[ \t]*)[0-9]+" "\\1${PROJECT_VERSION_MAJOR}" _SPLASH_CONTENT "${_SPLASH_CONTENT}")
-        string(REGEX REPLACE "(SKYUI_VERSION_MINOR[ \t]*=[ \t]*)[0-9]+" "\\1${PROJECT_VERSION_MINOR}" _SPLASH_CONTENT "${_SPLASH_CONTENT}")
-        file(WRITE "${DST}" "${_SPLASH_CONTENT}")
+    if(DST_NAME STREQUAL "SkyUISplash.as")
+        set(_SPLASH_DST "${DST}")
     endif()
 endforeach()
+
+# Patch version constants in SkyUISplash.as (outside the loop)
+if(_SPLASH_DST AND DEFINED PROJECT_VERSION_MAJOR AND DEFINED PROJECT_VERSION_MINOR)
+    file(READ "${_SPLASH_DST}" _SPLASH_CONTENT)
+    string(REGEX REPLACE "(SKYUI_VERSION_MAJOR[ \t]*=[ \t]*)[0-9]+" "\\1${PROJECT_VERSION_MAJOR}" _SPLASH_CONTENT "${_SPLASH_CONTENT}")
+    string(REGEX REPLACE "(SKYUI_VERSION_MINOR[ \t]*=[ \t]*)[0-9]+" "\\1${PROJECT_VERSION_MINOR}" _SPLASH_CONTENT "${_SPLASH_CONTENT}")
+    file(WRITE "${_SPLASH_DST}" "${_SPLASH_CONTENT}")
+endif()
 
 if(DEFINED FRAME_SOURCES_FILE AND EXISTS "${FRAME_SOURCES_FILE}")
     file(STRINGS "${FRAME_SOURCES_FILE}" FRAME_SOURCES)
