@@ -87,26 +87,34 @@ def patch_xml(input_file, output_file, target_fps=120.0):
 
     fr_match = re.search(r'frameRate="([^"]+)"', content)
     if not fr_match: return
-    orig_fps = float(fr_match.group(1))
-    if orig_fps >= target_fps:
+    orig_fps_val = float(fr_match.group(1))
+    orig_fps_int = int(round(orig_fps_val))
+    
+    if orig_fps_val >= target_fps:
         if input_file != output_file:
             with open(output_file, 'w', encoding='utf-8', newline='\n') as f: f.write(content)
         return
 
-    multiplier = target_fps / orig_fps
-    print(f"  Multiplier: {multiplier:.4f} ({orig_fps} -> {target_fps})")
+    multiplier = target_fps / orig_fps_val
+    print(f"  Multiplier: {multiplier:.4f} ({orig_fps_val} -> {target_fps})")
     content = re.sub(r'frameRate="[^"]+"', f'frameRate="{target_fps}"', content, count=1)
 
     def sprite_repl(match):
         header_full, body, footer = match.groups()
         header_attrs = dict(re.findall(r'(\w+)="([^"]*)"', header_full))
         if 'type' in header_attrs: del header_attrs['type']
+        
         old_count = int(header_attrs.get('frameCount', 0))
-        if old_count <= 1: return match.group(0)
+        
+        # ONLY patch if the number of frames is AT LEAST the original framerate
+        if old_count < orig_fps_int:
+            return match.group(0)
+        
         new_count = int(round(old_count * multiplier))
         header_attrs['frameCount'] = str(new_count)
         h_parts = [f'{k}="{header_attrs[k]}"' for k in sorted(header_attrs.keys())]
         new_header = f'    <item type="DefineSpriteTag" {" ".join(h_parts)}>\n      <subTags>\n'
+        
         orig_tags = split_tags(body)
         frames = []; curr = []
         for t in orig_tags:
@@ -155,7 +163,6 @@ def patch_xml(input_file, output_file, target_fps=120.0):
                 s2 = hist[k+1] if k+1 < len(hist) else None
                 idx2 = int(round(s2['frame'] * multiplier)) if s2 else new_count
                 
-                # Check if object actually changes between s1 and s2
                 is_animating = False
                 if s2 and not 'remove' in s2 and s2['frame'] == s1['frame'] + 1:
                     if s1['matrix_attrs'] != s2['matrix_attrs'] or s1['color_attrs'] != s2['color_attrs']:
@@ -164,27 +171,21 @@ def patch_xml(input_file, output_file, target_fps=120.0):
                 for j in range(idx1, min(idx2, new_count)):
                     if j == idx1:
                         new_frames[j].append(s1['full']); continue
-                    
-                    if not is_animating:
-                        continue # Don't add redundant tags for static hold frames
-
+                    if not is_animating: continue
                     t = (j / multiplier - s1['frame'])
                     cur_attrs = s1['attrs'].copy()
                     cur_attrs['placeFlagMove'] = 'true'; cur_attrs['placeFlagHasCharacter'] = 'false'
                     child_lines = []
-                    
                     if s1['attrs'].get('placeFlagHasMatrix') == 'true':
                         m2 = s2['matrix_attrs'] if (s2 and not 'remove' in s2 and s2['matrix_attrs']) else s1['matrix_attrs']
                         m_cur = {attr: interp_val(attr, val, m2.get(attr, val), t) for attr, val in s1['matrix_attrs'].items() if attr != 'type'}
                         m_cur['type'] = 'MATRIX'; m_attrs = " ".join(f'{attr}="{m_cur[attr]}"' for attr in sorted(m_cur.keys()))
                         child_lines.append(f'          <matrix {m_attrs}/>')
-                    
                     if s1['attrs'].get('placeFlagHasColorTransform') == 'true':
                         c2 = s2['color_attrs'] if (s2 and not 'remove' in s2 and s2['color_attrs']) else s1['color_attrs']
                         c_cur = {attr: interp_val(attr, val, c2.get(attr, val), t) for attr, val in s1['color_attrs'].items() if attr != 'type'}
                         c_cur['type'] = 'CXFORMWITHALPHA'; c_attrs = " ".join(f'{attr}="{c_cur[attr]}"' for attr in sorted(c_cur.keys()))
                         child_lines.append(f'          <colorTransform {c_attrs}/>')
-                        
                     if s1['inner_raw']:
                         for line in s1['inner_raw'].split('\n'):
                             l = line.strip()
