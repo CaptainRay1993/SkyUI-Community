@@ -154,23 +154,37 @@ def patch_xml(input_file, output_file, target_fps=120.0):
                     continue
                 s2 = hist[k+1] if k+1 < len(hist) else None
                 idx2 = int(round(s2['frame'] * multiplier)) if s2 else new_count
+                
+                # Check if object actually changes between s1 and s2
+                is_animating = False
+                if s2 and not 'remove' in s2 and s2['frame'] == s1['frame'] + 1:
+                    if s1['matrix_attrs'] != s2['matrix_attrs'] or s1['color_attrs'] != s2['color_attrs']:
+                        is_animating = True
+
                 for j in range(idx1, min(idx2, new_count)):
                     if j == idx1:
                         new_frames[j].append(s1['full']); continue
+                    
+                    if not is_animating:
+                        continue # Don't add redundant tags for static hold frames
+
                     t = (j / multiplier - s1['frame'])
                     cur_attrs = s1['attrs'].copy()
                     cur_attrs['placeFlagMove'] = 'true'; cur_attrs['placeFlagHasCharacter'] = 'false'
                     child_lines = []
+                    
                     if s1['attrs'].get('placeFlagHasMatrix') == 'true':
-                        m2 = s2['matrix_attrs'] if s2 and not 'remove' in s2 and s2['frame'] == s1['frame']+1 and s2['attrs'].get('placeFlagHasMatrix') == 'true' else s1['matrix_attrs']
+                        m2 = s2['matrix_attrs'] if (s2 and not 'remove' in s2 and s2['matrix_attrs']) else s1['matrix_attrs']
                         m_cur = {attr: interp_val(attr, val, m2.get(attr, val), t) for attr, val in s1['matrix_attrs'].items() if attr != 'type'}
                         m_cur['type'] = 'MATRIX'; m_attrs = " ".join(f'{attr}="{m_cur[attr]}"' for attr in sorted(m_cur.keys()))
                         child_lines.append(f'          <matrix {m_attrs}/>')
+                    
                     if s1['attrs'].get('placeFlagHasColorTransform') == 'true':
-                        c2 = s2['color_attrs'] if s2 and not 'remove' in s2 and s2['frame'] == s1['frame']+1 and s2['attrs'].get('placeFlagHasColorTransform') == 'true' else s1['color_attrs']
+                        c2 = s2['color_attrs'] if (s2 and not 'remove' in s2 and s2['color_attrs']) else s1['color_attrs']
                         c_cur = {attr: interp_val(attr, val, c2.get(attr, val), t) for attr, val in s1['color_attrs'].items() if attr != 'type'}
                         c_cur['type'] = 'CXFORMWITHALPHA'; c_attrs = " ".join(f'{attr}="{c_cur[attr]}"' for attr in sorted(c_cur.keys()))
                         child_lines.append(f'          <colorTransform {c_attrs}/>')
+                        
                     if s1['inner_raw']:
                         for line in s1['inner_raw'].split('\n'):
                             l = line.strip()
@@ -191,6 +205,4 @@ if __name__ == "__main__":
     parser.add_argument('--file', required=True, help='Path to XML file to patch in-place')
     parser.add_argument('--fps', type=float, default=120.0, help='Target frame rate')
     args = parser.parse_args()
-    
-    if args.file:
-        patch_xml(args.file, args.file, target_fps=args.fps)
+    if args.file: patch_xml(args.file, args.file, target_fps=args.fps)
