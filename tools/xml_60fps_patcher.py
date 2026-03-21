@@ -59,35 +59,25 @@ def split_tags(body):
     return tags
 
 def get_opening_tag_attrs(tag_full):
-    """Extracts attributes ONLY from the opening tag, avoiding children."""
     match = re.match(r'<item([^>]*)>', tag_full)
     if not match: return {}
-    # Use re.finditer to avoid matching attributes inside children if tag spans lines
-    # but the regex above already limits to the first '>'
     return dict(re.findall(r'(\w+)="([^"]*)"', match.group(1)))
 
 def build_tag_str(t_type, attrs, children_str=""):
-    """Rebuilds tag string with correct hierarchy."""
-    # FFDec specific order for PlaceObject
     pref_order = ['characterId', 'clipDepth', 'depth', 'forceWriteAsLong', 'name', 'placeFlagHasCharacter', 'placeFlagHasClipActions', 'placeFlagHasClipDepth', 'placeFlagHasColorTransform', 'placeFlagHasMatrix', 'placeFlagHasName', 'placeFlagHasRatio', 'placeFlagMove', 'ratio']
-    
-    # Exclude type and reserved
     filtered = {k: v for k, v in attrs.items() if k not in ['type', 'reserved']}
-    
     attr_parts = []
     for k in pref_order:
         if k in filtered: attr_parts.append(f'{k}="{filtered[k]}"')
     for k in sorted(filtered.keys()):
         if k not in pref_order: attr_parts.append(f'{k}="{filtered[k]}"')
-            
     attr_str = " ".join(attr_parts)
-    
     if children_str:
         return f'        <item type="{t_type}" {attr_str}>\n{children_str}        </item>'
     else:
         return f'        <item type="{t_type}" {attr_str}/>'
 
-def patch_xml(input_file, output_file, target_fps=60.0):
+def patch_xml(input_file, output_file, target_fps=120.0):
     input_file = os.path.normpath(input_file)
     output_file = os.path.normpath(output_file)
     print(f"Patching {input_file} to {target_fps} fps...")
@@ -100,29 +90,25 @@ def patch_xml(input_file, output_file, target_fps=60.0):
     orig_fps = float(fr_match.group(1))
     if orig_fps >= target_fps:
         if input_file != output_file:
-            with open(output_file, 'w', encoding='utf-8') as f: f.write(content)
+            with open(output_file, 'w', encoding='utf-8', newline='\n') as f: f.write(content)
         return
 
     multiplier = target_fps / orig_fps
+    print(f"  Multiplier: {multiplier:.4f} ({orig_fps} -> {target_fps})")
     content = re.sub(r'frameRate="[^"]+"', f'frameRate="{target_fps}"', content, count=1)
 
     def sprite_repl(match):
         header_full, body, footer = match.groups()
         header_attrs = dict(re.findall(r'(\w+)="([^"]*)"', header_full))
         if 'type' in header_attrs: del header_attrs['type']
-        
         old_count = int(header_attrs.get('frameCount', 0))
         if old_count <= 1: return match.group(0)
-        
         new_count = int(round(old_count * multiplier))
         header_attrs['frameCount'] = str(new_count)
-        
         h_parts = [f'{k}="{header_attrs[k]}"' for k in sorted(header_attrs.keys())]
         new_header = f'    <item type="DefineSpriteTag" {" ".join(h_parts)}>\n      <subTags>\n'
-        
         orig_tags = split_tags(body)
-        frames = []
-        curr = []
+        frames = []; curr = []
         for t in orig_tags:
             type_m = re.search(r'type="([^"]+)"', t)
             if not type_m: continue
@@ -131,10 +117,7 @@ def patch_xml(input_file, output_file, target_fps=60.0):
             if t_type == 'ShowFrameTag':
                 frames.append(curr); curr = []
         if curr: frames.append(curr)
-        
-        depth_states = {}
-        new_frames = [[] for _ in range(new_count)]
-        
+        depth_states = {}; new_frames = [[] for _ in range(new_count)]
         for i, f_tags in enumerate(frames):
             for t_type, t_full in f_tags:
                 if t_type.startswith('PlaceObject'):
@@ -142,17 +125,11 @@ def patch_xml(input_file, output_file, target_fps=60.0):
                     d = attrs.get('depth')
                     if d:
                         if d not in depth_states: depth_states[d] = {'history': []}
-                        
-                        # Find matrix/color/etc for interpolation
-                        # These are attributes of specific children tags, not the parent!
-                        m_m = re.search(r'<matrix ([^/>]*/>)', t_full)
-                        c_m = re.search(r'<colorTransform ([^/>]*/>)', t_full)
-                        
-                        # Extract the WHOLE inner block between > and </item>
                         inner_raw = ""
                         inner_m = re.match(r'<item[^>]*>(.*)</item>', t_full, re.DOTALL)
                         if inner_m: inner_raw = inner_m.group(1).strip()
-                        
+                        m_m = re.search(r'<matrix ([^/>]*/>)', t_full)
+                        c_m = re.search(r'<colorTransform ([^/>]*/>)', t_full)
                         depth_states[d]['history'].append({
                             'frame': i, 'type': t_type, 'attrs': attrs, 'full': t_full,
                             'matrix_attrs': dict(re.findall(r'(\w+)="([^"]*)"', m_m.group(1))) if m_m else None,
@@ -168,7 +145,6 @@ def patch_xml(input_file, output_file, target_fps=60.0):
                 elif t_type != 'ShowFrameTag':
                     idx = int(round(i * multiplier))
                     if idx < new_count: new_frames[idx].append(t_full)
-
         for d, data in depth_states.items():
             hist = data['history']
             for k, s1 in enumerate(hist):
@@ -178,47 +154,29 @@ def patch_xml(input_file, output_file, target_fps=60.0):
                     continue
                 s2 = hist[k+1] if k+1 < len(hist) else None
                 idx2 = int(round(s2['frame'] * multiplier)) if s2 else new_count
-                
                 for j in range(idx1, min(idx2, new_count)):
                     if j == idx1:
                         new_frames[j].append(s1['full']); continue
-                    
                     t = (j / multiplier - s1['frame'])
                     cur_attrs = s1['attrs'].copy()
-                    cur_attrs['placeFlagMove'] = 'true'
-                    cur_attrs['placeFlagHasCharacter'] = 'false'
-                    
-                    # Rebuild inner children with interpolated matrix/color
+                    cur_attrs['placeFlagMove'] = 'true'; cur_attrs['placeFlagHasCharacter'] = 'false'
                     child_lines = []
-                    
-                    # 1. Handle Matrix
                     if s1['attrs'].get('placeFlagHasMatrix') == 'true':
                         m2 = s2['matrix_attrs'] if s2 and not 'remove' in s2 and s2['frame'] == s1['frame']+1 and s2['attrs'].get('placeFlagHasMatrix') == 'true' else s1['matrix_attrs']
                         m_cur = {attr: interp_val(attr, val, m2.get(attr, val), t) for attr, val in s1['matrix_attrs'].items() if attr != 'type'}
-                        m_cur['type'] = 'MATRIX'
-                        m_attrs = " ".join(f'{attr}="{m_cur[attr]}"' for attr in sorted(m_cur.keys()))
+                        m_cur['type'] = 'MATRIX'; m_attrs = " ".join(f'{attr}="{m_cur[attr]}"' for attr in sorted(m_cur.keys()))
                         child_lines.append(f'          <matrix {m_attrs}/>')
-                    
-                    # 2. Handle ColorTransform
                     if s1['attrs'].get('placeFlagHasColorTransform') == 'true':
                         c2 = s2['color_attrs'] if s2 and not 'remove' in s2 and s2['frame'] == s1['frame']+1 and s2['attrs'].get('placeFlagHasColorTransform') == 'true' else s1['color_attrs']
                         c_cur = {attr: interp_val(attr, val, c2.get(attr, val), t) for attr, val in s1['color_attrs'].items() if attr != 'type'}
-                        c_cur['type'] = 'CXFORMWITHALPHA'
-                        c_attrs = " ".join(f'{attr}="{c_cur[attr]}"' for attr in sorted(c_cur.keys()))
+                        c_cur['type'] = 'CXFORMWITHALPHA'; c_attrs = " ".join(f'{attr}="{c_cur[attr]}"' for attr in sorted(c_cur.keys()))
                         child_lines.append(f'          <colorTransform {c_attrs}/>')
-                    
-                    # 3. Handle Opaque children (clipActions, surfaceFilterList, etc.)
-                    # We strip matrix and colorTransform from the original inner_raw if we are replacing them
                     if s1['inner_raw']:
-                        # Simple logic: keep any line that doesn't start with <matrix or <colorTransform
-                        # (This works because FFDec XML has children on separate lines usually)
                         for line in s1['inner_raw'].split('\n'):
                             l = line.strip()
                             if l and not l.startswith('<matrix') and not l.startswith('<colorTransform'):
                                 child_lines.append('          ' + l)
-                    
                     new_frames[j].append(build_tag_str(s1['type'], cur_attrs, "\n".join(child_lines) + "\n" if child_lines else ""))
-
         res_body = ""
         for ftags in new_frames:
             for tag in ftags: res_body += tag.strip() + "\n"
@@ -226,16 +184,13 @@ def patch_xml(input_file, output_file, target_fps=60.0):
         return new_header + res_body + footer
 
     content = re.sub(r'(<item type="DefineSpriteTag"[^>]*>)\s*<subTags>(.*?)(</subTags>\s*</item>)', sprite_repl, content, flags=re.DOTALL)
-    with open(output_file, 'w', encoding='utf-8', newline='\n') as f:
-        f.write(content)
+    with open(output_file, 'w', encoding='utf-8', newline='\n') as f: f.write(content)
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--file')
-    parser.add_argument('--all', action='store_true')
+    parser = argparse.ArgumentParser(description='Patch SkyUI XML for higher fps')
+    parser.add_argument('--file', required=True, help='Path to XML file to patch in-place')
+    parser.add_argument('--fps', type=float, default=120.0, help='Target frame rate')
     args = parser.parse_args()
-    if args.file: patch_xml(args.file, args.file)
-    elif args.all:
-        for root, dirs, files in os.walk('source/swf'):
-            for file in files:
-                if file.endswith('.xml'): patch_xml(os.path.join(root, file), os.path.join(root, file))
+    
+    if args.file:
+        patch_xml(args.file, args.file, target_fps=args.fps)

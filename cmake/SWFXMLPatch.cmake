@@ -43,7 +43,7 @@ function(Add_XML_Base)
         OUTPUT "${_XML_PATCHED}"
         COMMAND "${CMAKE_COMMAND}" -E make_directory "staging/xml"
         COMMAND "${CMAKE_COMMAND}" -E copy "${_XML_SOURCE}" "${_XML_PATCHED}"
-        COMMAND "python" "${_PATCHER_SCRIPT}" "--file" "${_XML_PATCHED}"
+        COMMAND "python" "${_PATCHER_SCRIPT}" "--file" "${_XML_PATCHED}" "--fps" "120.0"
         DEPENDS "${_XML_SOURCE}" "${_PATCHER_SCRIPT}"
         COMMENT "[Build] Patching 60fps: ${ARG_XML_PATH}"
         VERBATIM

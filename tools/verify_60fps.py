@@ -82,7 +82,7 @@ def main():
         subprocess.run(f"git checkout origin/main -- {xml_path}", shell=True, capture_output=True)
         
         # 2. Patch
-        patch_cmd = f"python tools/xml_60fps_patcher.py --file {xml_path}"
+        patch_cmd = f"python tools/xml_60fps_patcher.py --file {xml_path} --fps 120.0"
         rc, out, err = run(patch_cmd)
         if rc != 0:
             print(f"  PATCH FAILED: {err}")
