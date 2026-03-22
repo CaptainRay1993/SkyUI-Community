@@ -313,17 +313,6 @@ bool function CheckMenuVersion(string a_swfName, string a_menu, string a_class)
 		return false
 	endIf
 
-	if (releaseIdx == 0)
-		Error(ERR_SWF_INVALID, "Incompatible menu file (" + a_swfName + ").\nPlease make sure you installed everything correctly and no other mod has overwritten this file.\n" \
-			+ "If you were using an older SkyUI version, un-install it and re-install the latest version.")
-
-	elseIf (releaseIdx != ReqSWFRelease)
-		Error(ERR_SWF_VERSION, "Menu file version mismatch for " + a_swfName + ".\n" \
-			+ "Required version: " + ReqSWFVersion + "\n" \
-			+ "Detected version: " + version)
-
-	endIf
-
 	return true
 endFunction
 
