@@ -204,7 +204,6 @@ class Shared.CenteredScrollingList extends Shared.BSScrollingList
       var item = this.GetItemUnderMouse();
       if (item) {
          this.doSetSelectedIndex(item.itemIndex, 0);
-         this.dispatchEvent({type: "itemClicked", index: item.itemIndex});
       }
    }
    function onMouseWheel(delta)
