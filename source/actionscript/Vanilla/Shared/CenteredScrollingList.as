@@ -274,4 +274,40 @@ class Shared.CenteredScrollingList extends Shared.BSScrollingList
          this.dispatchEvent({type: "selectionChange", index: this.iSelectedIndex, keyboardOrMouse: aiKeyboardOrMouse});
       }
    }
+
+   function onItemPress(aiKeyboardOrMouse)
+   {
+      if (aiKeyboardOrMouse == undefined) 
+      {
+         var centerClip = this.GetClipByIndex(this.iNumTopHalfEntries);
+         var centerIndex = (centerClip != undefined) ? centerClip.itemIndex : undefined;
+
+         if (!this.bDisableInput && !this.bDisableSelection && centerIndex != undefined)
+         {
+            if (!this.bPointerHighlight || this.iSelectedIndex != centerIndex)
+            {
+               this.bPointerHighlight = true;
+               this.bMouseDrivenNav = false;
+               this.iSelectedIndex = centerIndex;
+               
+               this.UpdateList(); 
+            }
+
+            this.dispatchEvent({
+               type: "itemPress",
+               index: this.iSelectedIndex,
+               entry: this.EntriesA[this.iSelectedIndex],
+               keyboardOrMouse: aiKeyboardOrMouse
+            });
+         }
+         else if (!this.bDisableInput)
+         {
+            this.dispatchEvent({type: "listPress"});
+         }
+      }
+      else 
+      {
+         super.onItemPress(aiKeyboardOrMouse);
+      }
+   }
 }
