@@ -2,6 +2,7 @@ class Quest_Journal extends MovieClip
 {
    var BottomBar;
    var BottomBar_mc;
+   var ConfigPanel;
    var PageArray;
    var QuestsFader;
    var QuestsTab;
@@ -38,6 +39,7 @@ class Quest_Journal extends MovieClip
       MovieClip(this.BottomBar_mc).Lock("B");
       this.BottomBar_mc._y += Stage.safeRect.y + marginBottomBar;
 
+      this.ConfigPanel = _root.ConfigPanelFader.configPanel;
       this.QuestsTab.disableFocus = true;
       this.StatsTab.disableFocus = true;
       this.SystemTab.disableFocus = true;
@@ -51,6 +53,7 @@ class Quest_Journal extends MovieClip
       gfx.io.GameDelegate.addCallBack("StartCloseMenu",this,"CloseMenu");
       gfx.io.GameDelegate.call("ShouldShowMod",[],this,"SetShowMod");
       this.BottomBar_mc.InitBar();
+      this.ConfigPanel.initExtensions();
    }
    function SetShowMod()
    {
@@ -180,6 +183,7 @@ class Quest_Journal extends MovieClip
          }
       }
       this.BottomBar_mc.SetPlatform(aiPlatform,abPS3Switch);
+      this.ConfigPanel.setPlatform(aiPlatform,abPS3Switch);
       this.TabButtonHelp.gotoAndStop(aiPlatform + 1);
    }
    function DoHideMenu()
@@ -189,5 +193,29 @@ class Quest_Journal extends MovieClip
    function DoShowMenu()
    {
       this._parent.gotoAndPlay("fadeIn");
+   }
+   function DisableTabs(abEnable)
+   {
+      this.QuestsTab.disabled = abEnable;
+      this.StatsTab.disabled = abEnable;
+      this.SystemTab.disabled = abEnable;
+   }
+   function ConfigPanelOpen()
+   {
+      this.DisableTabs(true);
+      this.SystemFader.Page_mc.endPage();
+      this.DoHideMenu();
+      _root.ConfigPanelFader.swapDepths(_root.QuestJournalFader);
+      gfx.managers.FocusHandler.instance.setFocus(this.ConfigPanel,0);
+      this.ConfigPanel.startPage();
+   }
+   function ConfigPanelClose()
+   {
+      this.ConfigPanel.endPage();
+      _root.QuestJournalFader.swapDepths(_root.ConfigPanelFader);
+      gfx.managers.FocusHandler.instance.setFocus(this,0);
+      this.DoShowMenu();
+      this.SystemFader.Page_mc.startPage();
+      this.DisableTabs(false);
    }
 }

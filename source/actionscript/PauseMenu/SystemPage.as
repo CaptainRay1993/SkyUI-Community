@@ -118,6 +118,7 @@ class SystemPage extends MovieClip
       this.CategoryList.entryList.push({text:"$LOAD"});
       this.CategoryList.entryList.push({text:"$INSTALLED CONTENT"});
       this.CategoryList.entryList.push({text:"$SETTINGS"});
+      this.CategoryList.entryList.push({text:"$MOD CONFIGURATION"});
       this.CategoryList.entryList.push({text:"$CONTROLS"});
       this.CategoryList.entryList.push({text:"$HELP"});
       this.CategoryList.entryList.push({text:"$QUIT"});
@@ -594,6 +595,9 @@ class SystemPage extends MovieClip
                gfx.io.GameDelegate.call("PlaySound",["UIMenuOK"]);
                return;
             case 6:
+               _root.QuestJournalFader.Menu_mc.ConfigPanelOpen();
+               return;
+            case 7:
                if(this.MappingList.entryList.length == 0)
                {
                   gfx.io.GameDelegate.call("RequestInputMappings",[this.MappingList.entryList]);
@@ -603,7 +607,7 @@ class SystemPage extends MovieClip
                this.StartState(SystemPage.INPUT_MAPPING_STATE);
                gfx.io.GameDelegate.call("PlaySound",["UIMenuOK"]);
                return;
-            case 7:
+            case 8:
                if(this.HelpList.entryList.length == 0)
                {
                   gfx.io.GameDelegate.call("PopulateHelpTopics",[this.HelpList.entryList]);
@@ -614,12 +618,13 @@ class SystemPage extends MovieClip
                {
                   this.StartState(SystemPage.HELP_LIST_STATE);
                   gfx.io.GameDelegate.call("PlaySound",["UIMenuOK"]);
-                  return;
                }
+               else
+               {
                gfx.io.GameDelegate.call("PlaySound",["UIMenuCancel"]);
+               }
                return;
-               break;
-            case 8:
+            case 9:
                gfx.io.GameDelegate.call("PlaySound",["UIMenuOK"]);
                gfx.io.GameDelegate.call("RequestIsOnPC",[],this,"populateQuitList");
                return;
@@ -989,11 +994,11 @@ class SystemPage extends MovieClip
    {
       if(this._ShowModMenu)
       {
-         gfx.io.GameDelegate.call("SetSaveDisabled",[this.CategoryList.entryList[0],this.CategoryList.entryList[1],this.CategoryList.entryList[2],this.CategoryList.entryList[3],this.CategoryList.entryList[5],this.CategoryList.entryList[8],true]);
+         gfx.io.GameDelegate.call("SetSaveDisabled",[this.CategoryList.entryList[0],this.CategoryList.entryList[1],this.CategoryList.entryList[2],this.CategoryList.entryList[3],this.CategoryList.entryList[5],this.CategoryList.entryList[9],true]);
       }
       else
       {
-         gfx.io.GameDelegate.call("SetSaveDisabled",[this.CategoryList.entryList[0],this.CategoryList.entryList[1],this.CategoryList.entryList[2],this.CategoryList.entryList[3],this.CategoryList.entryList[4],this.CategoryList.entryList[7],true]);
+         gfx.io.GameDelegate.call("SetSaveDisabled",[this.CategoryList.entryList[0],this.CategoryList.entryList[1],this.CategoryList.entryList[2],this.CategoryList.entryList[3],this.CategoryList.entryList[4],this.CategoryList.entryList[8],true]);
       }
       this.CategoryList.UpdateList();
    }
@@ -1360,13 +1365,13 @@ class SystemPage extends MovieClip
    {
       if(this._ShowModMenu)
       {
-         gfx.io.GameDelegate.call("SetSaveDisabled",[this.CategoryList.entryList[0],this.CategoryList.entryList[1],this.CategoryList.entryList[2],this.CategoryList.entryList[3],this.CategoryList.entryList[5],this.CategoryList.entryList[8],false]);
+         gfx.io.GameDelegate.call("SetSaveDisabled",[this.CategoryList.entryList[0],this.CategoryList.entryList[1],this.CategoryList.entryList[2],this.CategoryList.entryList[3],this.CategoryList.entryList[5],this.CategoryList.entryList[9],false]);
          this.CategoryList.entryList[6].disabled = false;
          this.CategoryList.entryList[7].disabled = false;
       }
       else
       {
-         gfx.io.GameDelegate.call("SetSaveDisabled",[this.CategoryList.entryList[0],this.CategoryList.entryList[1],this.CategoryList.entryList[2],this.CategoryList.entryList[3],this.CategoryList.entryList[4],this.CategoryList.entryList[7],false]);
+         gfx.io.GameDelegate.call("SetSaveDisabled",[this.CategoryList.entryList[0],this.CategoryList.entryList[1],this.CategoryList.entryList[2],this.CategoryList.entryList[3],this.CategoryList.entryList[4],this.CategoryList.entryList[8],false]);
          this.CategoryList.entryList[5].disabled = false;
          this.CategoryList.entryList[6].disabled = false;
       }
