@@ -44,6 +44,7 @@ class SystemPage extends MovieClip
    var bSavingSettings;
    var bSettingsChanged;
    var bShowKinectTunerButton;
+   var bVersionInitialized;
    var bUpdated;
    var iCurrentState;
    var iDebounceRemapModeID;
@@ -69,11 +70,24 @@ class SystemPage extends MovieClip
    static var TRANSITIONING = 15;
    static var CHARACTER_LOAD_STATE = 16;
    static var CHARACTER_SELECTION_STATE = 17;
-   static var INSTALLED_CONTENT_BUTTON_INDEX = 3;
-   static var MOD_MANAGER_BUTTON_INDEX = 4;
+   // static var MOD_MANAGER_BUTTON_INDEX = 4;
    static var CONTROLLER_ORBIS = 3;
    static var CONTROLLER_SCARLETT = 4;
    static var CONTROLLER_PROSPERO = 5;
+
+   static var IDX_QUICKSAVE;
+   static var IDX_SAVE;
+   static var IDX_LOAD;
+
+   static var IDX_INSTALLED_CONTENT;
+   static var IDX_CREATIONS;
+   
+   static var IDX_SETTINGS;
+   static var IDX_MOD_CONFIG;
+   static var IDX_CONTROLS;
+   static var IDX_HELP;
+   static var IDX_QUIT;
+
    var CancelButtonMappedTo = "Esc";
    function SystemPage()
    {
@@ -99,6 +113,7 @@ class SystemPage extends MovieClip
       this.bMenuClosing = false;
       this.bSavingSettings = false;
       this.bShowKinectTunerButton = false;
+      this.bVersionInitialized = false;
       this.iPlatform = 0;
       this.bDefaultsButtonVisible = false;
       this.TabPageSwitchBottomMem = new Array();
@@ -117,14 +132,9 @@ class SystemPage extends MovieClip
    }
    function onLoad()
    {
-      gfx.io.GameDelegate.call("SetVersionText",[this.VersionText]);
-      this.ParseVersion();
       this.CategoryList.entryList.push({text:"$QUICKSAVE"});
       this.CategoryList.entryList.push({text:"$SAVE"});
       this.CategoryList.entryList.push({text:"$LOAD"});
-      if (this.IsVersionAtLeast(1, 6, 1130)) {
-         this.CategoryList.entryList.splice(SystemPage.INSTALLED_CONTENT_BUTTON_INDEX,0,{text:"$INSTALLED CONTENT"});
-      }
       this.CategoryList.entryList.push({text:"$SETTINGS"});
       this.CategoryList.entryList.push({text:"$MOD CONFIGURATION"});
       this.CategoryList.entryList.push({text:"$CONTROLS"});
@@ -175,22 +185,19 @@ class SystemPage extends MovieClip
    function SetShowMod(show)
    {
       this._ShowModMenu = show;
-      if(this._ShowModMenu && this.CategoryList.entryList && this.CategoryList.entryList.length > 0)
-      {
-         var isAE = this.IsVersionAtLeast(1, 6, 1130);
-         var label = isAE ? "$CREATIONS" : "$MOD MANAGER";
-
-         var map = this.GetCategoryIndexMap();
-
-         this.CategoryList.entryList.splice(map.CREATIONS, 0, {text: label});
-         this.CategoryList.InvalidateData();
-      }
    }
    function startPage()
    {
       var _loc2_;
       if(!this.bUpdated)
       {
+         gfx.io.GameDelegate.call("SetVersionText",[this.VersionText]);
+         this.ParseVersion();
+         this.bVersionInitialized = true;
+
+         this.InitializeCategoryIndices();
+         this.InitializeCategoryBethesdaUI();
+         
          this.currentState = SystemPage.MAIN_STATE;
          gfx.io.GameDelegate.call("ShouldShowKinectTunerOption",[],this,"SetShouldShowKinectTunerOption");
          this.UpdatePermissions();
@@ -550,21 +557,21 @@ class SystemPage extends MovieClip
    }
    function onCategoryButtonPress(event)
    {
-      var _loc3_;
+      if (!this.bVersionInitialized) return;
+
       if(event.entry.disabled)
       {
          gfx.io.GameDelegate.call("PlaySound",["UIMenuCancel"]);
       }
       else if(this.iCurrentState == SystemPage.MAIN_STATE)
       {
-         var map = this.GetCategoryIndexMap();
          switch(event.index)
          {
-            case map.QUICKSAVE:
+            case this.IDX_QUICKSAVE:
                gfx.io.GameDelegate.call("PlaySound",["UIMenuOK"]);
                gfx.io.GameDelegate.call("QuickSave",[]);
                return;
-            case map.SAVE:
+            case this.IDX_SAVE:
                gfx.io.GameDelegate.call("UseCurrentCharacterFilter",[]);
                this.SaveLoadListHolder.isSaving = true;
                if(this.IsPlatformSony())
@@ -575,11 +582,11 @@ class SystemPage extends MovieClip
                gfx.io.GameDelegate.call("SAVE",[this.SaveLoadListHolder.List_mc.entryList,this.SaveLoadListHolder.batchSize]);
                return;
                break;
-            case map.LOAD:
+            case this.IDX_LOAD:
                this.SaveLoadListHolder.isSaving = false;
                gfx.io.GameDelegate.call("LOAD",[this.SaveLoadListHolder.List_mc.entryList,this.SaveLoadListHolder.batchSize]);
                return;
-            case map.INSTALLED_CONTENT:
+            case this.IDX_INSTALLED_CONTENT:
                if(this.CreationsList.entryList.length == 0)
                {
                   gfx.io.GameDelegate.call("PopulateCreationClubTopics",[this.CreationsList.entryList]);
@@ -595,17 +602,17 @@ class SystemPage extends MovieClip
                gfx.io.GameDelegate.call("PlaySound",["UIMenuCancel"]);
                return;
                break;
-            case map.CREATIONS:
+            case this.IDX_CREATIONS:
                gfx.io.GameDelegate.call("ModManager",[]);
                return;
-            case map.SETTINGS:
+            case this.IDX_SETTINGS:
                this.StartState(SystemPage.SETTINGS_CATEGORY_STATE);
                gfx.io.GameDelegate.call("PlaySound",["UIMenuOK"]);
                return;
-            case map.MOD_CONFIG:
+            case this.IDX_MOD_CONFIG:
                _root.QuestJournalFader.Menu_mc.ConfigPanelOpen();
                return;
-            case map.CONTROLS:
+            case this.IDX_CONTROLS:
                if(this.MappingList.entryList.length == 0)
                {
                   gfx.io.GameDelegate.call("RequestInputMappings",[this.MappingList.entryList]);
@@ -615,7 +622,7 @@ class SystemPage extends MovieClip
                this.StartState(SystemPage.INPUT_MAPPING_STATE);
                gfx.io.GameDelegate.call("PlaySound",["UIMenuOK"]);
                return;
-            case map.HELP:
+            case this.IDX_HELP:
                if(this.HelpList.entryList.length == 0)
                {
                   gfx.io.GameDelegate.call("PopulateHelpTopics",[this.HelpList.entryList]);
@@ -632,7 +639,7 @@ class SystemPage extends MovieClip
                   gfx.io.GameDelegate.call("PlaySound",["UIMenuCancel"]);
                }
                return;
-            case map.QUIT:
+            case this.IDX_QUIT:
                gfx.io.GameDelegate.call("PlaySound",["UIMenuOK"]);
                gfx.io.GameDelegate.call("RequestIsOnPC",[],this,"populateQuitList");
                return;
@@ -1395,60 +1402,75 @@ class SystemPage extends MovieClip
 
       return this._skyrimVersionBuild >= build;
    }
-   function GetCategoryIndexMap()
+   function InitializeCategoryIndices()
    {
+      if (!this.bVersionInitialized) return;
+
       var i = 0;
-      var map = {};
+      
+      this.IDX_QUICKSAVE = i++;
+      this.IDX_SAVE = i++;
+      this.IDX_LOAD = i++;
 
-      map.QUICKSAVE = i++;
-      map.SAVE      = i++;
-      map.LOAD      = i++;
+      this.IDX_INSTALLED_CONTENT = this.IsVersionAtLeast(1, 6, 1130) ? i++ : undefined;
+      this.IDX_CREATIONS = this._ShowModMenu ? i++ : undefined;
 
-      if (this.IsVersionAtLeast(1, 6, 1130))
-         map.INSTALLED_CONTENT = i++;
-
-      if (this._ShowModMenu)
-         map.CREATIONS = i++;
-
-      map.SETTINGS    = i++;
-      map.MOD_CONFIG  = i++;
-      map.CONTROLS    = i++;
-      map.HELP        = i++;
-      map.QUIT        = i++;
-
-      return map;
+      this.IDX_SETTINGS = i++;
+      this.IDX_MOD_CONFIG = i++;
+      this.IDX_CONTROLS = i++;
+      this.IDX_HELP = i++;
+      this.IDX_QUIT = i++;
+   }
+   function InitializeCategoryBethesdaUI()
+   {
+      if (!this.bVersionInitialized) return;
+      
+      var isAE = this.IsVersionAtLeast(1, 6, 1130);
+      if (isAE) {
+         this.CategoryList.entryList.splice(this.IDX_INSTALLED_CONTENT, 0, {text:"$INSTALLED CONTENT"});
+      }
+      
+      if(this._ShowModMenu && this.CategoryList.entryList.length > 0) {
+         var label = isAE ? "$CREATIONS" : "$MOD MANAGER";
+         this.CategoryList.entryList.splice(this.IDX_CREATIONS, 0, {text: label});
+      }
+      
+      this.CategoryList.InvalidateData();
    }
    function UpdateSystemButtons(abRefreshMode)
    {
-      var map = this.GetCategoryIndexMap();
+      if (!this.bVersionInitialized) return;
+      
       var list = this.CategoryList.entryList;
-      var arr = [];
-
-      arr.push(list[map.QUICKSAVE]);
-      arr.push(list[map.SAVE]);
-      arr.push(list[map.LOAD]);
       
-      if (map.INSTALLED_CONTENT !== undefined) {
-         arr.push(list[map.INSTALLED_CONTENT]);
+      var arr = [
+         list[this.IDX_QUICKSAVE],
+         list[this.IDX_SAVE],
+         list[this.IDX_LOAD]
+      ];
+      
+      if (this.IDX_INSTALLED_CONTENT !== undefined) {
+         arr.push(list[this.IDX_INSTALLED_CONTENT]);
       }
       
-      if (map.CREATIONS !== undefined) {
-         arr.push(list[map.CREATIONS]);
+      if (this.IDX_CREATIONS !== undefined) {
+         arr.push(list[this.IDX_CREATIONS]);
       }
       
-      arr.push(list[map.SETTINGS]);
-      arr.push(list[map.MOD_CONFIG]);
-      arr.push(list[map.CONTROLS]);
-      arr.push(list[map.HELP]);
-      arr.push(list[map.QUIT]);
-      
-      arr.push(abRefreshMode);
+      arr.push(
+         list[this.IDX_SETTINGS],
+         list[this.IDX_MOD_CONFIG],
+         list[this.IDX_CONTROLS],
+         list[this.IDX_HELP],
+         list[this.IDX_QUIT],
+         abRefreshMode
+      );
 
       gfx.io.GameDelegate.call("SetSaveDisabled", arr);
 
       if (!abRefreshMode) {
-         if (map.HELP !== undefined) list[map.HELP].disabled = false;
-         if (map.QUIT !== undefined) list[map.QUIT].disabled = false;
+         list[this.IDX_HELP].disabled = false;
+         list[this.IDX_QUIT].disabled = false;
       }
 
       this.CategoryList.UpdateList();

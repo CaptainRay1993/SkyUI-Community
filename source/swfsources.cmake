@@ -354,7 +354,6 @@ Add_SWF(quest_journal
     quest_journal.swf
     quest_journal.xml
     Common/skyui/defines/Input.as
-    PauseMenu/InputMappingArt.as
     PauseMenu/InputMappingList.as
     PauseMenu/JournalBottomBar.as
     PauseMenu/JournalSaveLoadList.as
