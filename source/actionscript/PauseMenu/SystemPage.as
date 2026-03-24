@@ -99,6 +99,7 @@ class SystemPage extends MovieClip
       this.bMenuClosing = false;
       this.bSavingSettings = false;
       this.bShowKinectTunerButton = false;
+      this.bVersionInitialized = false;
       this.iPlatform = 0;
       this.bDefaultsButtonVisible = false;
       this.TabPageSwitchBottomMem = new Array();
@@ -125,7 +126,6 @@ class SystemPage extends MovieClip
       this.CategoryList.entryList.push({text:"$CONTROLS"});
       this.CategoryList.entryList.push({text:"$HELP"});
       this.CategoryList.entryList.push({text:"$QUIT"});
-      this.bVersionInitialized = false;
       this.CategoryList.InvalidateData();
       this.ConfirmPanel.handleInput = function()
       {
