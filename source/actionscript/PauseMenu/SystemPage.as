@@ -44,6 +44,7 @@ class SystemPage extends MovieClip
    var bSavingSettings;
    var bSettingsChanged;
    var bShowKinectTunerButton;
+   var bVersionInitialized;
    var bUpdated;
    var iCurrentState;
    var iDebounceRemapModeID;
@@ -69,8 +70,7 @@ class SystemPage extends MovieClip
    static var TRANSITIONING = 15;
    static var CHARACTER_LOAD_STATE = 16;
    static var CHARACTER_SELECTION_STATE = 17;
-   static var INSTALLED_CONTENT_BUTTON_INDEX = 3;
-   static var MOD_MANAGER_BUTTON_INDEX = 4;
+   // static var MOD_MANAGER_BUTTON_INDEX = 4;
    static var CONTROLLER_ORBIS = 3;
    static var CONTROLLER_SCARLETT = 4;
    static var CONTROLLER_PROSPERO = 5;
@@ -117,19 +117,15 @@ class SystemPage extends MovieClip
    }
    function onLoad()
    {
-      gfx.io.GameDelegate.call("SetVersionText",[this.VersionText]);
-      this.ParseVersion();
       this.CategoryList.entryList.push({text:"$QUICKSAVE"});
       this.CategoryList.entryList.push({text:"$SAVE"});
       this.CategoryList.entryList.push({text:"$LOAD"});
-      if (this.IsVersionAtLeast(1, 6, 1130)) {
-         this.CategoryList.entryList.splice(SystemPage.INSTALLED_CONTENT_BUTTON_INDEX,0,{text:"$INSTALLED CONTENT"});
-      }
       this.CategoryList.entryList.push({text:"$SETTINGS"});
       this.CategoryList.entryList.push({text:"$MOD CONFIGURATION"});
       this.CategoryList.entryList.push({text:"$CONTROLS"});
       this.CategoryList.entryList.push({text:"$HELP"});
       this.CategoryList.entryList.push({text:"$QUIT"});
+      this.bVersionInitialized = false;
       this.CategoryList.InvalidateData();
       this.ConfirmPanel.handleInput = function()
       {
@@ -175,22 +171,34 @@ class SystemPage extends MovieClip
    function SetShowMod(show)
    {
       this._ShowModMenu = show;
-      if(this._ShowModMenu && this.CategoryList.entryList && this.CategoryList.entryList.length > 0)
-      {
-         var isAE = this.IsVersionAtLeast(1, 6, 1130);
-         var label = isAE ? "$CREATIONS" : "$MOD MANAGER";
-
-         var map = this.GetCategoryIndexMap();
-
-         this.CategoryList.entryList.splice(map.CREATIONS, 0, {text: label});
-         this.CategoryList.InvalidateData();
+   }
+   function InitializeVersionDependentUI()
+   {
+      var map = this.GetCategoryIndexMap();
+      var isAE = this.IsVersionAtLeast(1, 6, 1130);
+      
+      if (isAE) {
+         this.CategoryList.entryList.splice(map.INSTALLED_CONTENT, 0, {text:"$INSTALLED CONTENT"});
       }
+      
+      if(this._ShowModMenu && this.CategoryList.entryList.length > 0) {
+         var label = isAE ? "$CREATIONS" : "$MOD MANAGER";
+         this.CategoryList.entryList.splice(map.CREATIONS, 0, {text: label});
+      }
+      
+      this.CategoryList.InvalidateData();
    }
    function startPage()
    {
       var _loc2_;
       if(!this.bUpdated)
       {
+         gfx.io.GameDelegate.call("SetVersionText",[this.VersionText]);
+         this.ParseVersion();
+         this.bVersionInitialized = true;
+         
+         this.InitializeVersionDependentUI();
+         
          this.currentState = SystemPage.MAIN_STATE;
          gfx.io.GameDelegate.call("ShouldShowKinectTunerOption",[],this,"SetShouldShowKinectTunerOption");
          this.UpdatePermissions();
