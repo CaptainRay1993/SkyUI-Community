@@ -816,7 +816,9 @@ class SystemPage extends MovieClip
                {text:"$Save on Pause", movieType:1, options:["$5 Mins","$10 Mins","$15 Mins","$30 Mins","$45 Mins","$60 Mins","$Disabled"]},
                {text:"$Use Kinect Commands", movieType:2}
             ];
-            
+            // Insert "$SaveGameMissingCreationsCheck" only for Skyrim versions 1.6.659+.
+            // Backward compatibility: versions below 1.6.659 require a hardcoded index order in the options list.
+            // Do NOT test this by simply changing the version number in condition, as it may break menu indexing.
             if(this.IsVersionAtLeast(1, 6, 659))
             {
                entries.splice(4, 0, {text:"$SaveGameMissingCreationsCheck", movieType:2});
