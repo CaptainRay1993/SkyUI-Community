@@ -855,6 +855,9 @@ class SystemPage extends MovieClip
             }
             break;
       }
+      // Items with ID = undefined are removed by this loop. The engine assigns IDs via "gfx.io.GameDelegate.call(Request...);".
+      // Missing an item (like $SaveGameMissingCreationsCheck) can shift indices, causing the engine to assign ID = undefined
+      // to elements such as $Difficulty, which the loop then removes. This explains why $Difficulty can disappear.
       for(var i = entries.length - 1; i >= 0; i--)
       {
          if(entries[i].ID == undefined)
