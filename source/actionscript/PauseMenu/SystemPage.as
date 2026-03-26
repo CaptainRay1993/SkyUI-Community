@@ -44,7 +44,6 @@ class SystemPage extends MovieClip
    var bSavingSettings;
    var bSettingsChanged;
    var bShowKinectTunerButton;
-   var bVersionInitialized;
    var bUpdated;
    var iCurrentState;
    var iDebounceRemapModeID;
@@ -113,7 +112,6 @@ class SystemPage extends MovieClip
       this.bMenuClosing = false;
       this.bSavingSettings = false;
       this.bShowKinectTunerButton = false;
-      this.bVersionInitialized = false;
       this.iPlatform = 0;
       this.bDefaultsButtonVisible = false;
       this.TabPageSwitchBottomMem = new Array();
@@ -135,11 +133,15 @@ class SystemPage extends MovieClip
       this.CategoryList.entryList.push({text:"$QUICKSAVE"});
       this.CategoryList.entryList.push({text:"$SAVE"});
       this.CategoryList.entryList.push({text:"$LOAD"});
+      if (this.IsAE()) {
+         this.CategoryList.entryList.push({text:"$INSTALLED CONTENT"});
+      }
       this.CategoryList.entryList.push({text:"$SETTINGS"});
       this.CategoryList.entryList.push({text:"$MOD CONFIGURATION"});
       this.CategoryList.entryList.push({text:"$CONTROLS"});
       this.CategoryList.entryList.push({text:"$HELP"});
       this.CategoryList.entryList.push({text:"$QUIT"});
+      this.UpdateIndices();
       this.CategoryList.InvalidateData();
       this.ConfirmPanel.handleInput = function()
       {
@@ -182,23 +184,24 @@ class SystemPage extends MovieClip
       gfx.io.GameDelegate.addCallBack("SetRemoteDevice",this,"SetRemoteDevice");
       gfx.io.GameDelegate.addCallBack("UpdatePermissions",this,"UpdatePermissions");
    }
-   function SetShowMod(show)
+   function SetShowMod(bshow)
    {
-      this._ShowModMenu = show;
+      this._ShowModMenu = bshow;
+      if(this._ShowModMenu && this.CategoryList.entryList && this.CategoryList.entryList.length > 0)
+      {
+         var insertPos = this.IsAE() ? 4 : 3;
+         this.CategoryList.entryList.splice(insertPos,0,{text:"$MOD MANAGER"});
+         this.UpdateIndices();
+         this.CategoryList.InvalidateData();
+      }
    }
    function startPage()
    {
       var _loc2_;
       if(!this.bUpdated)
       {
-         gfx.io.GameDelegate.call("SetVersionText",[this.VersionText]);
-         this.ParseVersion();
-         this.bVersionInitialized = true;
-
-         this.InitializeCategoryIndices();
-         this.InitializeCategoryBethesdaUI();
-         
          this.currentState = SystemPage.MAIN_STATE;
+         gfx.io.GameDelegate.call("SetVersionText",[this.VersionText]);
          gfx.io.GameDelegate.call("ShouldShowKinectTunerOption",[],this,"SetShouldShowKinectTunerOption");
          this.UpdatePermissions();
          this.BottomBar_mc.SetButtonVisibility(1,false,50);
@@ -557,8 +560,6 @@ class SystemPage extends MovieClip
    }
    function onCategoryButtonPress(event)
    {
-      if (!this.bVersionInitialized) return;
-
       if(event.entry.disabled)
       {
          gfx.io.GameDelegate.call("PlaySound",["UIMenuCancel"]);
@@ -815,7 +816,7 @@ class SystemPage extends MovieClip
                {text:"$Use Kinect Commands",movieType:2}
             ];
 
-            if(this.IsVersionAtLeast(1, 6, 659))
+            if(this.IsAE())
             {
                entries.splice(4, 0, {text:"$SaveGameMissingCreationsCheck",movieType:2});
             }
@@ -1420,64 +1421,35 @@ class SystemPage extends MovieClip
    {
       return this.iPlatform == SystemPage.CONTROLLER_ORBIS || this.iPlatform == SystemPage.CONTROLLER_PROSPERO;
    }
-   function ParseVersion()
+   function IsAE()
    {
-      var clean = this.VersionText.text.split(" ")[0];
-      var parts = clean.split(".");
-
-      this._skyrimVersion = parseInt(parts[0]);
-      this._skyrimVersionMinor = parseInt(parts[1]);
-      this._skyrimVersionBuild = parseInt(parts[2]);
+      return skse.version.releaseIdx >= 70;
    }
-   function IsVersionAtLeast(major, minor, build)
+   function UpdateIndices()
    {
-      if(this._skyrimVersion > major) return true;
-      if(this._skyrimVersion < major) return false;
-
-      if(this._skyrimVersionMinor > minor) return true;
-      if(this._skyrimVersionMinor < minor) return false;
-
-      return this._skyrimVersionBuild >= build;
-   }
-   function InitializeCategoryIndices()
-   {
-      if (!this.bVersionInitialized) return;
-
-      var i = 0;
+      var list = this.CategoryList.entryList;
       
-      this.IDX_QUICKSAVE = i++;
-      this.IDX_SAVE = i++;
-      this.IDX_LOAD = i++;
+      this.IDX_INSTALLED_CONTENT = undefined;
+      this.IDX_CREATIONS = undefined;
 
-      this.IDX_INSTALLED_CONTENT = this.IsVersionAtLeast(1, 6, 1130) ? i++ : undefined;
-      this.IDX_CREATIONS = this._ShowModMenu ? i++ : undefined;
-
-      this.IDX_SETTINGS = i++;
-      this.IDX_MOD_CONFIG = i++;
-      this.IDX_CONTROLS = i++;
-      this.IDX_HELP = i++;
-      this.IDX_QUIT = i++;
-   }
-   function InitializeCategoryBethesdaUI()
-   {
-      if (!this.bVersionInitialized) return;
-      
-      var isAE = this.IsVersionAtLeast(1, 6, 1130);
-      if (isAE) {
-         this.CategoryList.entryList.splice(this.IDX_INSTALLED_CONTENT, 0, {text:"$INSTALLED CONTENT"});
+      for (var i = 0; i < list.length; i++)
+      {
+         var itemText = list[i].text;
+         
+         if (itemText == "$QUICKSAVE")          this.IDX_QUICKSAVE = i;
+         else if (itemText == "$SAVE")          this.IDX_SAVE = i;
+         else if (itemText == "$LOAD")          this.IDX_LOAD = i;
+         else if (itemText == "$INSTALLED CONTENT") this.IDX_INSTALLED_CONTENT = i;
+         else if (itemText == "$MOD MANAGER")   this.IDX_CREATIONS = i;
+         else if (itemText == "$SETTINGS")      this.IDX_SETTINGS = i;
+         else if (itemText == "$MOD CONFIGURATION") this.IDX_MOD_CONFIG = i;
+         else if (itemText == "$CONTROLS")      this.IDX_CONTROLS = i;
+         else if (itemText == "$HELP")          this.IDX_HELP = i;
+         else if (itemText == "$QUIT")          this.IDX_QUIT = i;
       }
-      
-      if(this._ShowModMenu && this.CategoryList.entryList.length > 0) {
-         var label = isAE ? "$CREATIONS" : "$MOD MANAGER";
-         this.CategoryList.entryList.splice(this.IDX_CREATIONS, 0, {text: label});
-      }
-      
-      this.CategoryList.InvalidateData();
    }
    function UpdateSystemButtons(abRefreshMode)
    {
-      if (!this.bVersionInitialized) return;
-      
       var list = this.CategoryList.entryList;
       
       var arr = [
