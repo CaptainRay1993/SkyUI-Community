@@ -1414,10 +1414,6 @@ class SystemPage extends MovieClip
    {
       return this.iPlatform == SystemPage.CONTROLLER_ORBIS || this.iPlatform == SystemPage.CONTROLLER_PROSPERO;
    }
-   function IsVersionAtLeast1126()
-   {
-      return skse.version.releaseIdx >= 70;
-   }
    function UpdateIndices()
    {
       var list = this.CategoryList.entryList;
@@ -1495,5 +1491,9 @@ class SystemPage extends MovieClip
       if(this._skyrimVersionMinor < minor) return false;
 
       return this._skyrimVersionBuild >= build;
+   }
+   function IsVersionAtLeast1126()
+   {
+      return skse.version.releaseIdx >= 70;
    }
 }
