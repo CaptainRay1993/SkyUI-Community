@@ -133,7 +133,7 @@ class SystemPage extends MovieClip
       this.CategoryList.entryList.push({text:"$QUICKSAVE"});
       this.CategoryList.entryList.push({text:"$SAVE"});
       this.CategoryList.entryList.push({text:"$LOAD"});
-      if (this.IsAE()) {
+      if (this.IsVersionAtLeast1126()) {
          this.CategoryList.entryList.push({text:"$INSTALLED CONTENT"});
       }
       this.CategoryList.entryList.push({text:"$SETTINGS"});
@@ -189,7 +189,7 @@ class SystemPage extends MovieClip
       this._ShowModMenu = bshow;
       if(this._ShowModMenu && this.CategoryList.entryList && this.CategoryList.entryList.length > 0)
       {
-         var insertPos = this.IsAE() ? 4 : 3;
+         var insertPos = this.IsVersionAtLeast1126() ? 4 : 3;
          this.CategoryList.entryList.splice(insertPos,0,{text:"$MOD MANAGER"});
          this.UpdateIndices();
          this.CategoryList.InvalidateData();
@@ -801,6 +801,7 @@ class SystemPage extends MovieClip
       switch(this.SettingsList.selectedIndex)
       {
          case 0:
+            skse.Log(this.VersionText.text);
             entries = [
                {text:"$Invert Y",movieType:2},
                {text:"$Look Sensitivity",movieType:0},
@@ -816,7 +817,7 @@ class SystemPage extends MovieClip
                {text:"$Use Kinect Commands",movieType:2}
             ];
 
-            if(this.IsAE())
+            if(this.IsVersionAtLeast1126())
             {
                entries.splice(4, 0, {text:"$SaveGameMissingCreationsCheck",movieType:2});
             }
@@ -1421,7 +1422,7 @@ class SystemPage extends MovieClip
    {
       return this.iPlatform == SystemPage.CONTROLLER_ORBIS || this.iPlatform == SystemPage.CONTROLLER_PROSPERO;
    }
-   function IsAE()
+   function IsVersionAtLeast1126()
    {
       return skse.version.releaseIdx >= 70;
    }
