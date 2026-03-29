@@ -27,13 +27,13 @@ itemcard.yOffset = 0
 
 
 ; =====================================================================================================================
-[ItemList] 
+[ItemList]
 ; =====================================================================================================================
 quantityMenu.minCount = 6 ; Number of items required to trigger quantity dialog. 0 is disabled
 
 
 ; =====================================================================================================================
-[Appearance] 
+[Appearance]
 ; =====================================================================================================================
 icons.category.source = 'skyui/icons_category_psychosteve.swf'
 
@@ -50,7 +50,7 @@ colors.negative.disabled = 0x800000
 
 
 ; =====================================================================================================================
-[ListLayout] 
+[ListLayout]
 ; =====================================================================================================================
 vars.a_textBorder.value = <0, 0, 1.1, 0> ; left right top bottom
 vars.n_iconSize.value = 18
@@ -100,13 +100,13 @@ columns.iconColumn.icon.size = n_iconSize
 columns.iconColumn.border = <0, 3, 3, 3> ; left right top bottom
 
 columns.iconColumn.state1.label.text = ' '
-columns.iconColumn.state1.sortAttributes = <type, formType, subType, weightClass, material, infoDamage, infoArmor, infoSchoolName, actorValue, resistance, skillLevel, magnitude, duration, isRead, text>
-columns.iconColumn.state1.sortOptions = <{ASCENDING | NUMERIC}, {ASCENDING | NUMERIC}, {ASCENDING | NUMERIC}, {ASCENDING | NUMERIC}, {ASCENDING | NUMERIC}, {DESCENDING | NUMERIC}, {DESCENDING | NUMERIC}, {ASCENDING | CASEINSENSITIVE}, {ASCENDING | NUMERIC}, {ASCENDING | NUMERIC}, {DESCENDING | NUMERIC}, {DESCENDING | NUMERIC}, {DESCENDING | NUMERIC}, {ASCENDING | NUMERIC}, {ASCENDING | CASEINSENSITIVE}>
+columns.iconColumn.state1.sortAttributes = <type, formType, subTypeDisplay, weightClassDisplay, materialDisplay, infoDamage, infoArmor, infoSchoolName, skillLevel, actorValue, resistance, magnitude, duration, isRead, text>
+columns.iconColumn.state1.sortOptions = <{ASCENDING | NUMERIC}, {ASCENDING | NUMERIC}, {ASCENDING | CASEINSENSITIVE}, {ASCENDING | CASEINSENSITIVE}, {ASCENDING | CASEINSENSITIVE}, {DESCENDING | NUMERIC}, {DESCENDING | NUMERIC}, {ASCENDING | CASEINSENSITIVE}, {ASCENDING | NUMERIC}, {ASCENDING | NUMERIC}, {ASCENDING| NUMERIC}, {DESCENDING | NUMERIC}, {DESCENDING | NUMERIC}, {ASCENDING | NUMERIC}, {ASCENDING | CASEINSENSITIVE}>
 
 columns.iconColumn.state2.label.text = ' '
 columns.iconColumn.state2.label.arrowDown = true
-columns.iconColumn.state2.sortAttributes = <type, formType, subType, weightClass, material, infoDamage, infoArmor, infoSchoolName, actorValue, resistance, skillLevel, magnitude, duration, isRead, text>
-columns.iconColumn.state2.sortOptions = <{DESCENDING | NUMERIC}, {DESCENDING | NUMERIC}, {DESCENDING | NUMERIC}, {DESCENDING | NUMERIC}, {DESCENDING | NUMERIC}, {ASCENDING | NUMERIC}, {ASCENDING | NUMERIC}, {DESCENDING | CASEINSENSITIVE}, {DESCENDING | NUMERIC}, {DESCENDING | NUMERIC}, {ASCENDING | NUMERIC}, {ASCENDING | NUMERIC}, {ASCENDING | NUMERIC}, {DESCENDING | NUMERIC}, {DESCENDING | CASEINSENSITIVE}>
+columns.iconColumn.state2.sortAttributes = <type, formType, subTypeDisplay, weightClassDisplay, materialDisplay, infoDamage, infoArmor, infoSchoolName, skillLevel, actorValue, resistance, magnitude, duration, isRead, text>
+columns.iconColumn.state2.sortOptions = <{DESCENDING | NUMERIC}, {DESCENDING | NUMERIC}, {DESCENDING | CASEINSENSITIVE}, {DESCENDING |CASEINSENSITIVE}, {DESCENDING | CASEINSENSITIVE}, {ASCENDING | NUMERIC}, {ASCENDING | NUMERIC}, {DESCENDING | CASEINSENSITIVE}, {DESCENDING | NUMERIC}, {DESCENDING | NUMERIC}, {DESCENDING | NUMERIC}, {ASCENDING | NUMERIC}, {ASCENDING | NUMERIC}, {DESCENDING | NUMERIC}, {DESCENDING | CASEINSENSITIVE}>
 
 ; ITEM NAME COLUMN -------------------------------------------------------
 columns.itemNameColumn.type = NAME
@@ -758,3 +758,16 @@ layouts.smithingListLayout.views = <defaultCraftingView>
 
 layouts.alchemyListLayout.name = 'AlchemyListLayout'
 layouts.alchemyListLayout.views = <alchemyView>
+
+
+;===========================================================================================================
+[Properties]
+;===========================================================================================================
+props.otherIcon.propertiesToSet = <'iconLabel'>
+props.otherIcon.filter = <'formType': Form.TYPE_MISC>
+
+props.soulgemIcon.propertiesToSet = <'iconLabel'>
+props.soulgemIcon.filter = <'formType': Form.TYPE_SOULGEM>
+props.soulgemIcon.keywords.DaedricArtifact = <'iconLabel': 'soulgem_azura'>
+
+itemIcons = <potionColor, armorColor, clothingIcon, weaponIcon, otherIcon, soulgemIcon, edibleTag>
