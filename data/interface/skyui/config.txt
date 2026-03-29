@@ -27,13 +27,13 @@ itemcard.yOffset = 0
 
 
 ; =====================================================================================================================
-[ItemList]
+[ItemList] 
 ; =====================================================================================================================
 quantityMenu.minCount = 6 ; Number of items required to trigger quantity dialog. 0 is disabled
 
 
 ; =====================================================================================================================
-[Appearance]
+[Appearance] 
 ; =====================================================================================================================
 icons.category.source = 'skyui/icons_category_psychosteve.swf'
 
@@ -50,7 +50,7 @@ colors.negative.disabled = 0x800000
 
 
 ; =====================================================================================================================
-[ListLayout]
+[ListLayout] 
 ; =====================================================================================================================
 vars.a_textBorder.value = <0, 0, 1.1, 0> ; left right top bottom
 vars.n_iconSize.value = 18
@@ -758,16 +758,3 @@ layouts.smithingListLayout.views = <defaultCraftingView>
 
 layouts.alchemyListLayout.name = 'AlchemyListLayout'
 layouts.alchemyListLayout.views = <alchemyView>
-
-
-;===========================================================================================================
-[Properties]
-;===========================================================================================================
-props.otherIcon.propertiesToSet = <'iconLabel'>
-props.otherIcon.filter = <'formType': Form.TYPE_MISC>
-
-props.soulgemIcon.propertiesToSet = <'iconLabel'>
-props.soulgemIcon.filter = <'formType': Form.TYPE_SOULGEM>
-props.soulgemIcon.keywords.DaedricArtifact = <'iconLabel': 'soulgem_azura'>
-
-itemIcons = <potionColor, armorColor, clothingIcon, weaponIcon, otherIcon, soulgemIcon, edibleTag>
